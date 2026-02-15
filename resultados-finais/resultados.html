@@ -757,13 +757,13 @@
     window.exibirCabecalho = function(dados) { 
       DADOS_RELATORIO_ATUAL = dados; 
       
-      // Verifica se há observações
-      const temObs = dados.trajetoria.some(t => t.existe && t.obs && String(t.obs).trim() !== ""); 
+      // Filtra observações existentes para saber se renderiza o bloco
+      const listaObs = dados.trajetoria.filter(t => t.existe && t.obs && String(t.obs).trim() !== "");
+      const temObs = listaObs.length > 0;
       
-      // Verifica se há código SISTEC válido
+      // Verifica SISTEC
       const temSistec = dados.sistec && String(dados.sistec).trim() !== "" && String(dados.sistec) !== "NA";
 
-      // Atalho de segurança XSS
       const safe = window.escapeHTML; 
       
       let html = `
@@ -828,14 +828,32 @@
           </div>` : '' }
 
           <div class="mt-3 p-3 rounded" style="background-color: var(--background); border: 1px solid var(--outline-variant);">
-            <div class="d-flex justify-content-between align-items-center mb-2">
-              <small class="text-secondary fw-bold text-uppercase">Observações</small>
-              ${ temObs ? `<button onclick="window.copiarObservacoes(this)" class="btn-action btn-sm"><i class="fas fa-copy"></i> Copiar</button>` : '' }
+            
+            <div class="d-flex justify-content-between align-items-center mb-3 border-bottom pb-2" style="border-color: rgba(0,0,0,0.05) !important;">
+               <div class="d-flex align-items-center gap-2">
+                  <label class="chk-container" style="cursor: pointer; margin-bottom: 0;">
+                    <input type="checkbox" class="form-check-input" id="chk-obs-master" checked onchange="window.toggleAllObs(this)">
+                    <span class="text-secondary fw-bold text-uppercase small" style="user-select: none;">Observações</span>
+                  </label>
+               </div>
+               ${ temObs ? `<button onclick="window.copiarObservacoesSelecionadas(this)" class="btn-action btn-sm"><i class="fas fa-copy"></i> Copiar</button>` : '' }
             </div>
-            <ul class="mb-0 ps-3 small mt-2" style="color: var(--text-secondary)">
-              ${dados.trajetoria.map(t => t.existe && t.obs ? `<li><strong>${safe(t.ano)}:</strong> ${safe(t.obs)}</li>` : '').join('')}
-            </ul>
+
+            <div class="d-flex flex-column gap-2">
+              ${listaObs.map((t, index) => `
+                <div class="d-flex align-items-start gap-2 p-1 hover-obs-item">
+                   <label class="chk-container mt-1" style="cursor: pointer;">
+                      <input type="checkbox" class="form-check-input chk-obs-item" checked value="${safe(t.ano)}: ${safe(t.obs)}">
+                   </label>
+                   <span class="small" style="color: var(--text-secondary); line-height: 1.4;">
+                      <strong>${safe(t.ano)}:</strong> ${safe(t.obs)}
+                   </span>
+                </div>
+              `).join('')}
+              ${ !temObs ? '<span class="small text-muted fst-italic ms-1">Nenhuma observação registrada.</span>' : ''}
+            </div>
           </div>
+
         </div>`; 
       
       document.getElementById('resultadoArea').innerHTML = html; 
@@ -1116,6 +1134,32 @@
       // Envia apenas o código para a área de transferência
       window.executarCopiaReal(DADOS_RELATORIO_ATUAL.sistec, btnElement);
     };
+
+    // --- Lógica de Checkbox para Observações ---
+
+    // 1. Função do Checkbox Mestre (Selecionar Tudo)
+    window.toggleAllObs = function(masterChk) {
+      const checkboxes = document.querySelectorAll('.chk-obs-item');
+      checkboxes.forEach(chk => chk.checked = masterChk.checked);
+    };
+
+    // 2. Função de Copiar (Lê os checkboxes marcados)
+    window.copiarObservacoesSelecionadas = function(btnElement) {
+      // Pega todos os checkboxes que estão marcados (.checked)
+      const marcados = document.querySelectorAll('.chk-obs-item:checked');
+      
+      if (marcados.length === 0) {
+        alert("Selecione pelo menos uma observação para copiar.");
+        return;
+      }
+
+      // Extrai o valor de cada um e junta com quebra de linha
+      // O .value já contém "ANO: TEXTO" formatado no HTML
+      const textoFinal = Array.from(marcados).map(chk => chk.value).join("\n");
+      
+      // Envia para a área de transferência
+      window.executarCopiaReal(textoFinal, btnElement);
+    };    
 
     window.executarCopiaReal = function(texto, btn) { 
       const textarea = document.createElement('textarea'); 
