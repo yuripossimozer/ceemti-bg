@@ -224,6 +224,17 @@
       background-color: var(--primary);
       border-color: var(--primary);
     }
+
+    /* --- CORREÇÃO: Checkboxes fora da tabela (Observações) --- */
+    .form-check-input:checked {
+      background-color: var(--primary);
+      border-color: var(--primary);
+    }
+    
+    .form-check-input:focus {
+      box-shadow: 0 0 0 0.25rem var(--table-stripe); /* Opcional: efeito de foco suave */
+      border-color: var(--primary);
+    }    
     
     /* --- DESTAQUE DE CÉLULA (MATRIZ DINÂMICA) --- */
     /* A classe agora é aplicada no TD, não mais no TR */
@@ -757,11 +768,8 @@
     window.exibirCabecalho = function(dados) { 
       DADOS_RELATORIO_ATUAL = dados; 
       
-      // Filtra observações existentes para saber se renderiza o bloco
       const listaObs = dados.trajetoria.filter(t => t.existe && t.obs && String(t.obs).trim() !== "");
       const temObs = listaObs.length > 0;
-      
-      // Verifica SISTEC
       const temSistec = dados.sistec && String(dados.sistec).trim() !== "" && String(dados.sistec) !== "NA";
 
       const safe = window.escapeHTML; 
@@ -836,14 +844,14 @@
                     <span class="text-secondary fw-bold text-uppercase small" style="user-select: none;">Observações</span>
                   </label>
                </div>
-               ${ temObs ? `<button onclick="window.copiarObservacoesSelecionadas(this)" class="btn-action btn-sm"><i class="fas fa-copy"></i> Copiar</button>` : '' }
+               ${ temObs ? `<button id="btnCopiarObs" onclick="window.copiarObservacoesSelecionadas(this)" class="btn-action btn-sm"><i class="fas fa-copy"></i> Copiar</button>` : '' }
             </div>
 
             <div class="d-flex flex-column gap-2">
-              ${listaObs.map((t, index) => `
+              ${listaObs.map((t) => `
                 <div class="d-flex align-items-start gap-2 p-1 hover-obs-item">
                    <label class="chk-container mt-1" style="cursor: pointer;">
-                      <input type="checkbox" class="form-check-input chk-obs-item" checked value="${safe(t.ano)}: ${safe(t.obs)}">
+                      <input type="checkbox" class="form-check-input chk-obs-item" checked value="${safe(t.obs)}" onchange="window.atualizarEstadoObs()">
                    </label>
                    <span class="small" style="color: var(--text-secondary); line-height: 1.4;">
                       <strong>${safe(t.ano)}:</strong> ${safe(t.obs)}
@@ -1135,31 +1143,54 @@
       window.executarCopiaReal(DADOS_RELATORIO_ATUAL.sistec, btnElement);
     };
 
-    // --- Lógica de Checkbox para Observações ---
+    // --- Lógica Avançada de Checkbox para Observações ---
 
-    // 1. Função do Checkbox Mestre (Selecionar Tudo)
+    // 1. Checkbox Mestre (Selecionar Tudo)
     window.toggleAllObs = function(masterChk) {
       const checkboxes = document.querySelectorAll('.chk-obs-item');
       checkboxes.forEach(chk => chk.checked = masterChk.checked);
+      // Força a atualização do estado do botão após marcar/desmarcar tudo
+      window.atualizarEstadoObs();
     };
 
-    // 2. Função de Copiar (Lê os checkboxes marcados)
-    window.copiarObservacoesSelecionadas = function(btnElement) {
-      // Pega todos os checkboxes que estão marcados (.checked)
+    // 2. Função Central de Estado (Sincronia e Visibilidade)
+    window.atualizarEstadoObs = function() {
+      const checkboxes = document.querySelectorAll('.chk-obs-item');
       const marcados = document.querySelectorAll('.chk-obs-item:checked');
-      
-      if (marcados.length === 0) {
-        alert("Selecione pelo menos uma observação para copiar.");
-        return;
+      const master = document.getElementById('chk-obs-master');
+      const btn = document.getElementById('btnCopiarObs');
+
+      // A. Sincronia do Master Checkbox
+      if (checkboxes.length > 0) {
+        // Se todos estiverem marcados, marca o master. Se não, desmarca.
+        master.checked = (marcados.length === checkboxes.length);
+        // Opcional: Indeterminate state se apenas alguns estiverem marcados
+        master.indeterminate = (marcados.length > 0 && marcados.length < checkboxes.length);
       }
 
-      // Extrai o valor de cada um e junta com quebra de linha
-      // O .value já contém "ANO: TEXTO" formatado no HTML
+      // B. Visibilidade do Botão Copiar
+      if (btn) {
+        if (marcados.length > 0) {
+           btn.style.visibility = 'visible';
+           btn.style.opacity = '1';
+        } else {
+           btn.style.visibility = 'hidden';
+           btn.style.opacity = '0';
+        }
+      }
+    };
+
+    // 3. Copiar (Já pega o value limpo do HTML)
+    window.copiarObservacoesSelecionadas = function(btnElement) {
+      const marcados = document.querySelectorAll('.chk-obs-item:checked');
+      
+      if (marcados.length === 0) return; // Segurança extra
+
+      // O .value agora contém apenas o texto da observação, sem o ano
       const textoFinal = Array.from(marcados).map(chk => chk.value).join("\n");
       
-      // Envia para a área de transferência
       window.executarCopiaReal(textoFinal, btnElement);
-    };    
+    };
 
     window.executarCopiaReal = function(texto, btn) { 
       const textarea = document.createElement('textarea'); 
