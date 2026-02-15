@@ -1155,7 +1155,7 @@
       window.atualizarEstadoObs();
     };
 
-    // 2. Função Central de Estado (Sincronia e Visibilidade)
+    // 2. Função Central de Estado (Sincronia, Visibilidade e Texto)
     window.atualizarEstadoObs = function() {
       const checkboxes = document.querySelectorAll('.chk-obs-item');
       const marcados = document.querySelectorAll('.chk-obs-item:checked');
@@ -1163,18 +1163,26 @@
       const btn = document.getElementById('btnCopiarObs');
 
       // A. Sincronia do Master Checkbox
-      if (checkboxes.length > 0) {
-        // Se todos estiverem marcados, marca o master. Se não, desmarca.
+      if (checkboxes.length > 0 && master) {
+        // Marca se todos estiverem marcados
         master.checked = (marcados.length === checkboxes.length);
-        // Opcional: Indeterminate state se apenas alguns estiverem marcados
+        // Fica 'tracinho' se tiver algo marcado, mas não tudo
         master.indeterminate = (marcados.length > 0 && marcados.length < checkboxes.length);
       }
 
-      // B. Visibilidade do Botão Copiar
+      // B. Visibilidade e Texto do Botão
       if (btn) {
         if (marcados.length > 0) {
            btn.style.visibility = 'visible';
            btn.style.opacity = '1';
+           
+           // --- NOVA LÓGICA DE TEXTO ---
+           const isTudo = (marcados.length === checkboxes.length);
+           const novoTexto = isTudo ? '<i class="fas fa-copy"></i> Copiar' : '<i class="fas fa-copy"></i> Copiar Seleção';
+           
+           // Só altera o HTML se o texto for diferente (evita repaint desnecessário)
+           if (btn.innerHTML !== novoTexto) btn.innerHTML = novoTexto;
+
         } else {
            btn.style.visibility = 'hidden';
            btn.style.opacity = '0';
