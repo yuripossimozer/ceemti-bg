@@ -386,6 +386,19 @@
 
   <script>
     // =========================================================
+    // 0. SEGURANÇA (NOVA FUNÇÃO)
+    // =========================================================
+    window.escapeHTML = function(str) {
+      if (!str) return "";
+      return String(str)
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#039;");
+    };
+
+    // =========================================================
     // 1. CONSTANTES E ESTADO GLOBAL
     // =========================================================
     const API_URL = "https://script.google.com/macros/s/AKfycbwjuwuIUaREmo34IOVa4tOC1xiKwLw9ADwFQfsuoVsGUDR03eyRdTmwlWJqMH9lltJnYQ/exec";
@@ -745,16 +758,18 @@
       DADOS_RELATORIO_ATUAL = dados; 
       const temObs = dados.trajetoria.some(t => t.existe && t.obs && String(t.obs).trim() !== ""); 
       
-      // Constrói HTML do card principal (Cabeçalho + Trajetória)
+      // FUNÇÃO DE SEGURANÇA APLICADA AQUI
+      const safe = window.escapeHTML; // Atalho para facilitar a leitura
+      
       let html = `
         <div class="m-card">
           <div class="d-flex justify-content-between align-items-start mb-4 border-bottom pb-3" style="border-color: var(--outline-variant) !important;">
             <div>
-              <h4 class="mb-3" style="color: var(--text-secondary); font-weight: 700; font-size: 1.25rem;">${dados.aluno}</h4>
+              <h4 class="mb-3" style="color: var(--text-secondary); font-weight: 700; font-size: 1.25rem;">${safe(dados.aluno)}</h4>
               <div class="d-flex flex-wrap gap-2 mt-2">
-                <span class="meta-tag" title="Oferta Concomitante"><i class="fas fa-layer-group"></i> ${dados.oc}</span>
-                <span class="meta-tag" title="Código SISTEC"><i class="fas fa-fingerprint"></i> ${dados.sistec}</span>
-                <span class="meta-tag" title="Anos com Resultado Final"><i class="fas fa-calendar-check"></i> ${dados.anosRegistrados}</span>
+                <span class="meta-tag" title="Oferta Concomitante"><i class="fas fa-layer-group"></i> ${safe(dados.oc)}</span>
+                <span class="meta-tag" title="Código SISTEC"><i class="fas fa-fingerprint"></i> ${safe(dados.sistec)}</span>
+                <span class="meta-tag" title="Anos com Resultado Final"><i class="fas fa-calendar-check"></i> ${safe(dados.anosRegistrados)}</span>
               </div>
             </div>
           </div>
@@ -768,7 +783,7 @@
                 <table class="table table-sm table-hover text-center">
                   <thead><tr><th>Ano</th><th>Turma</th></tr></thead>
                   <tbody>
-                    ${dados.trajetoria.map(t => `<tr><td>${t.ano}</td><td>${t.turma}</td></tr>`).join('')}
+                    ${dados.trajetoria.map(t => `<tr><td>${safe(t.ano)}</td><td>${safe(t.turma)}</td></tr>`).join('')}
                   </tbody>
                 </table>
               </div>
@@ -785,10 +800,11 @@
                   <tbody>
                     ${dados.trajetoria.map(t => { 
                       if (t.existe) { 
-                        return `<tr><td>${t.ano}</td><td>${t.ch}</td><td>${t.dias}</td><td>${t.faltas}</td><td>${t.porc}</td>
-                                <td><span class="badge rounded-pill ${t.res==='AP'?'bg-success':'bg-secondary'}">${t.res}</span></td></tr>`; 
+                        // NOTA: Números geralmente são seguros, mas 'res' (Resultado) pode ser texto
+                        return `<tr><td>${safe(t.ano)}</td><td>${t.ch}</td><td>${t.dias}</td><td>${t.faltas}</td><td>${t.porc}</td>
+                                <td><span class="badge rounded-pill ${t.res==='AP'?'bg-success':'bg-secondary'}">${safe(t.res)}</span></td></tr>`; 
                       } else { 
-                        return `<tr><td class="text-secondary">${t.ano}</td><td class="text-secondary" colspan="5">-</td></tr>`; 
+                        return `<tr><td class="text-secondary">${safe(t.ano)}</td><td class="text-secondary" colspan="5">-</td></tr>`; 
                       } 
                     }).join('')}
                   </tbody>
@@ -803,7 +819,7 @@
               ${ temObs ? `<button onclick="window.copiarObservacoes(this)" class="btn-action btn-sm"><i class="fas fa-copy"></i> Copiar</button>` : '' }
             </div>
             <ul class="mb-0 ps-3 small mt-2" style="color: var(--text-secondary)">
-              ${dados.trajetoria.map(t => t.existe && t.obs ? `<li><strong>${t.ano}:</strong> ${t.obs}</li>` : '').join('')}
+              ${dados.trajetoria.map(t => t.existe && t.obs ? `<li><strong>${safe(t.ano)}:</strong> ${safe(t.obs)}</li>` : '').join('')}
             </ul>
           </div>
         </div>`; 
@@ -842,6 +858,9 @@
     };    
     
     window.renderizarTabelaFinal = function(tabela, trajetoria) { 
+      // Atalho de segurança
+      const safe = window.escapeHTML;
+
       let html = `
         <div class="m-card">
           <div class="d-flex justify-content-between align-items-center mb-3">
@@ -862,7 +881,7 @@
                     <th colspan="3" class="${t.existe ? '' : 'text-muted'}">
                       <label class="chk-container" style="cursor: pointer;">
                         <input type="checkbox" class="form-check-input chk-col-header" data-col-index="${index}" checked onchange="window.atualizarVisualMatriz()">
-                        <span>${t.existe ? t.turma : t.ano}</span>
+                        <span>${t.existe ? safe(t.turma) : safe(t.ano)}</span>
                       </label>
                     </th>`).join('')}
                 </tr>
@@ -876,10 +895,10 @@
                     <td class="text-start fw-bold text-nowrap">
                       <label class="chk-container start" style="cursor: pointer;">
                         <input type="checkbox" class="form-check-input chk-row-item" data-row-index="${idx}" checked onchange="window.verificarMasterCheckbox()">
-                        <span>${linha.disciplina}</span>
+                        <span>${safe(linha.disciplina)}</span>
                       </label>
                     </td>
-                    ${linha.anos.map((ano, idxAno) => `<td data-year-idx="${idxAno}">${ano.nota}</td><td data-year-idx="${idxAno}">${ano.ch}</td><td data-year-idx="${idxAno}">${ano.falta}</td>`).join('')}
+                    ${linha.anos.map((ano, idxAno) => `<td data-year-idx="${idxAno}">${safe(ano.nota)}</td><td data-year-idx="${idxAno}">${safe(ano.ch)}</td><td data-year-idx="${idxAno}">${safe(ano.falta)}</td>`).join('')}
                   </tr>`).join('')}
               </tbody>
             </table>
