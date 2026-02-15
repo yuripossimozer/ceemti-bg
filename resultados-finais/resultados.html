@@ -769,35 +769,11 @@
     window.exibirCabecalho = function(dados) { 
       DADOS_RELATORIO_ATUAL = dados; 
       
-      const safe = window.escapeHTML;
-
-      // 1. Unificação das Listas na Ordem de Prioridade (OC -> EX -> Anos)
-      let listaUnificada = [];
-
-      // A. Adiciona OC
-      if (dados.listaOC && dados.listaOC.length > 0) {
-        dados.listaOC.forEach(obs => {
-          listaUnificada.push({ label: 'OC', texto: obs, tipo: 'oc' });
-        });
-      }
-
-      // B. Adiciona EX
-      if (dados.listaEX && dados.listaEX.length > 0) {
-        dados.listaEX.forEach(obs => {
-          listaUnificada.push({ label: 'EX', texto: obs, tipo: 'ex' });
-        });
-      }
-
-      // C. Adiciona Anos (Trajetória)
-      dados.trajetoria.forEach(t => {
-        if (t.existe && t.obs && String(t.obs).trim() !== "") {
-           listaUnificada.push({ label: t.ano, texto: t.obs, tipo: 'ano' });
-        }
-      });
-
-      const temObs = listaUnificada.length > 0;
+      const listaObs = dados.trajetoria.filter(t => t.existe && t.obs && String(t.obs).trim() !== "");
+      const temObs = listaObs.length > 0;
       const temSistec = dados.sistec && String(dados.sistec).trim() !== "" && String(dados.sistec) !== "NA";
 
+      const safe = window.escapeHTML; 
       
       let html = `
         <div class="m-card">
@@ -880,17 +856,16 @@
             </div>
 
             <div class="d-flex flex-column gap-2">
-              ${listaUnificada.map((item) => `
+              ${listaObs.map((t) => `
                 <div class="d-flex align-items-start gap-2 p-1 hover-obs-item">
                    <label class="chk-container mt-1" style="cursor: pointer;">
-                      <input type="checkbox" class="form-check-input chk-obs-item" checked value="${safe(item.label)}: ${safe(item.texto)}" onchange="window.atualizarEstadoObs()">
+                      <input type="checkbox" class="form-check-input chk-obs-item" checked value="${safe(t.obs)}" onchange="window.atualizarEstadoObs()">
                    </label>
                    <span class="small" style="color: var(--text-secondary); line-height: 1.4;">
-                      <strong>${safe(item.label)}:</strong> ${safe(item.texto)}
+                      <strong>${safe(t.ano)}:</strong> ${safe(t.obs)}
                    </span>
                 </div>
               `).join('')}
-              
               ${ !temObs ? '<span class="small text-muted fst-italic ms-1">Nenhuma observação registrada.</span>' : ''}
             </div>
           </div>
