@@ -760,7 +760,7 @@
       // Verifica se há observações
       const temObs = dados.trajetoria.some(t => t.existe && t.obs && String(t.obs).trim() !== ""); 
       
-      // Verifica se há código SISTEC válido (não vazio e não "NA")
+      // Verifica se há código SISTEC válido
       const temSistec = dados.sistec && String(dados.sistec).trim() !== "" && String(dados.sistec) !== "NA";
 
       // Atalho de segurança XSS
@@ -817,12 +817,12 @@
           </div>
           
           ${ temSistec ? `
-          <div class="mt-4 p-3 rounded" style="background-color: var(--surface-container); border: 1px solid var(--primary); border-left: 4px solid var(--primary);">
-            <div class="d-flex justify-content-between align-items-center">
-              <small class="text-primary fw-bold text-uppercase"><i class="fas fa-fingerprint me-1"></i> CÓD. SISTEC</small>
+          <div class="mt-4 p-3 rounded" style="background-color: var(--background); border: 1px solid var(--outline-variant);">
+            <div class="d-flex justify-content-between align-items-center mb-2">
+              <small class="text-secondary fw-bold text-uppercase">Código SISTEC</small>
               <button onclick="window.copiarSistec(this)" class="btn-action btn-sm"><i class="fas fa-copy"></i> Copiar</button>
             </div>
-            <div class="mt-2 fw-bold text-center" style="font-family: 'Roboto Mono', monospace; font-size: 1.2rem; color: var(--text-main); letter-spacing: 1px;">
+            <div class="mb-0 ps-1 small mt-2" style="color: var(--text-secondary); font-family: monospace; font-size: 0.9rem;">
                 ${safe(dados.sistec)}
             </div>
           </div>` : '' }
@@ -836,7 +836,6 @@
               ${dados.trajetoria.map(t => t.existe && t.obs ? `<li><strong>${safe(t.ano)}:</strong> ${safe(t.obs)}</li>` : '').join('')}
             </ul>
           </div>
-
         </div>`; 
       
       document.getElementById('resultadoArea').innerHTML = html; 
