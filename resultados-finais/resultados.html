@@ -225,14 +225,15 @@
       border-color: var(--primary);
     }
 
-    /* --- CORREÇÃO: Checkboxes fora da tabela (Observações) --- */
-    .form-check-input:checked {
-      background-color: var(--primary);
-      border-color: var(--primary);
+    /* --- CORREÇÃO GERAL: Checkboxes (Checked e Indeterminado) --- */
+    .form-check-input:checked, 
+    .form-check-input:indeterminate {
+      background-color: var(--primary) !important;
+      border-color: var(--primary) !important;
     }
     
     .form-check-input:focus {
-      box-shadow: 0 0 0 0.25rem var(--table-stripe); /* Opcional: efeito de foco suave */
+      box-shadow: 0 0 0 0.25rem var(--table-stripe);
       border-color: var(--primary);
     }    
     
@@ -839,11 +840,18 @@
             
             <div class="d-flex justify-content-between align-items-center mb-3 border-bottom pb-2" style="border-color: rgba(0,0,0,0.05) !important;">
                <div class="d-flex align-items-center gap-2">
-                  <label class="chk-container" style="cursor: pointer; margin-bottom: 0;">
-                    <input type="checkbox" class="form-check-input" id="chk-obs-master" checked onchange="window.toggleAllObs(this)">
-                    <span class="text-secondary fw-bold text-uppercase small" style="user-select: none;">Observações</span>
-                  </label>
+                  ${ temObs 
+                    ? `
+                    <label class="chk-container" style="cursor: pointer; margin-bottom: 0;">
+                        <input type="checkbox" class="form-check-input" id="chk-obs-master" checked onchange="window.toggleAllObs(this)">
+                        <span class="text-secondary fw-bold text-uppercase small" style="user-select: none;">Observações</span>
+                    </label>` 
+                    : `
+                    <span class="text-secondary fw-bold text-uppercase small">Observações</span>
+                    ` 
+                  }
                </div>
+               
                ${ temObs ? `<button id="btnCopiarObs" onclick="window.copiarObservacoesSelecionadas(this)" class="btn-action btn-sm"><i class="fas fa-copy"></i> Copiar</button>` : '' }
             </div>
 
@@ -955,53 +963,47 @@
     let frameVisualUpdate = null;
 
     window.atualizarVisualMatriz = function() {
-      // --- PARTE 1: Lógica Instantânea (Botão e Checkbox Master) ---
-      // Executa AGORA, sem esperar o próximo frame
-      
+      // --- PARTE 1: Lógica Instantânea (Botão) ---
       const colHeaders = document.querySelectorAll('.chk-col-header');
       const rowChecks = document.querySelectorAll('.chk-row-item');
       
-      // Leitura rápida para decisão do botão
-      // (Usamos Array.from.some para ser mais rápido que contar tudo se não precisar)
       const temCol = Array.from(colHeaders).some(c => c.checked);
       const temRow = Array.from(rowChecks).some(r => r.checked);
       const temDadosParaCopiar = (temCol && temRow);
 
       const btn = document.getElementById('btnCopiarNotas');
-      
-      // Atualiza visibilidade IMEDIATAMENTE
-      if (btn) {
-         btn.style.visibility = temDadosParaCopiar ? 'visible' : 'hidden';
-      }
+      if (btn) btn.style.visibility = temDadosParaCopiar ? 'visible' : 'hidden';
 
-      // --- PARTE 2: Lógica Pesada (Pintar a Tabela) ---
-      // Agenda para o próximo frame para não travar o clique
-      
+      // --- PARTE 2: Lógica Visual (Highlight + Indeterminate) ---
       if (frameVisualUpdate) cancelAnimationFrame(frameVisualUpdate);
       
       frameVisualUpdate = requestAnimationFrame(() => {
-        // Recalcula contagens exatas para saber se é Full ou Seleção
+        // Recalcula contagens
         const mapaCols = Array.from(colHeaders).map(chk => chk.checked);
         const mapaRows = Array.from(rowChecks).map(chk => chk.checked);
 
         const qtdColsChecked = mapaCols.filter(Boolean).length;
         const qtdRowsChecked = mapaRows.filter(Boolean).length;
 
-        const isTodasCols = (colHeaders.length === qtdColsChecked);
-        const isTodasRows = (rowChecks.length === qtdRowsChecked);
+        const isTodasCols = (colHeaders.length > 0 && colHeaders.length === qtdColsChecked);
+        const isTodasRows = (rowChecks.length > 0 && rowChecks.length === qtdRowsChecked);
         const isTudoFull = (isTodasCols && isTodasRows);
 
-        // Atualiza Texto do Botão (sem mexer na visibilidade que já foi tratada)
+        // Atualiza Texto do Botão
         if (btn && temDadosParaCopiar) {
              const novoTexto = isTudoFull ? '<i class="fas fa-copy"></i> Copiar' : '<i class="fas fa-copy"></i> Copiar Seleção';
              if (btn.innerHTML !== novoTexto) btn.innerHTML = novoTexto;
         }
 
-        // Atualiza Master Checkbox
+        // --- NOVIDADE: Atualiza Master Checkbox com Indeterminado ---
         const master = document.getElementById('chk-all-rows');
-        if (master) master.checked = isTodasRows;
+        if (master) {
+           master.checked = isTodasRows;
+           // Define como indeterminado se: Tem algo marcado E não são todos
+           master.indeterminate = (qtdRowsChecked > 0 && qtdRowsChecked < rowChecks.length);
+        }
 
-        // Pinta a Tabela (Batch Update)
+        // Pinta a Tabela
         rowChecks.forEach((chk, idxRow) => {
           const tr = chk.closest('tr');
           const isRowAtiva = mapaRows[idxRow];
