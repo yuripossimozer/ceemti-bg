@@ -1,0 +1,375 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta name="theme-color" content="#fdfcff" id="meta-theme-color">
+  <link rel="manifest" href="../pwa/manifest.json">
+  <link rel="apple-touch-icon" href="../icon.png">  
+  <link rel="icon" type="image/png" href="../icon.png">
+  
+  <title>Bookmarklet</title>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+
+  <script>
+    // Previne flash de tema claro ao carregar
+    (function() {
+      try {
+        const savedTheme = localStorage.getItem('theme');
+        const metaTheme = document.getElementById('meta-theme-color');
+        if (savedTheme === 'dark') {
+          document.documentElement.setAttribute('data-theme', 'dark');
+          if (metaTheme) metaTheme.setAttribute('content', '#111315');
+        }
+      } catch (e) {}
+    })();
+  </script>
+
+  <style>
+    /* VARIÁVEIS & TEMA */
+    :root {
+      --primary: #005fa4;
+      --on-primary: #ffffff;
+      --primary-container: #d5e3ff;
+      --on-primary-container: #001b3c;
+      --success: #146c2e;
+      --background: #fdfcff;
+      --surface: #fdfcff;
+      --surface-container: #f0f4f9;
+      --outline: #74777f;
+      --outline-variant: #c4c7cf;
+      --text-main: #1a1c1e;
+      --text-secondary: #3b3f46;
+      --radius-card: 24px;
+      --radius-btn: 100px;
+    }
+
+    [data-theme="dark"] {
+      --primary: #a8c7fa;
+      --on-primary: #00315b;
+      --primary-container: #004786;
+      --on-primary-container: #d5e3ff;
+      --success: #6dd58c;
+      --background: #111315;
+      --surface: #111315;
+      --surface-container: #1d2024;
+      --outline: #8e9099;
+      --outline-variant: #44474e;
+      --text-main: #e2e2e6;
+      --text-secondary: #c4c7c5;
+    }
+
+    /* ESTRUTURA */
+    body {
+      width: 100%;
+      min-height: 100dvh;
+      background-color: var(--background);
+      color: var(--text-main);
+      font-family: 'Roboto', sans-serif;
+      transition: background-color 0.3s ease, color 0.3s ease;
+      padding-bottom: 60px;
+    }
+
+    /* COMPONENTES */
+    .app-bar {
+      background-color: var(--surface-container);
+      padding: 1rem 1.5rem;
+      border-radius: var(--radius-card);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 1.5rem;
+      border: 1px solid var(--outline-variant);
+    }
+    .app-title { font-weight: 700; color: var(--text-secondary); font-size: 1.25rem; }
+
+    .m-card {
+      background-color: var(--surface-container);
+      border-radius: var(--radius-card);
+      padding: 1.5rem;
+      border: 1px solid var(--outline-variant);
+      margin-bottom: 1.5rem;
+      height: 100%;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      transition: transform 0.2s;
+    }
+
+    .btn-icon {
+      background: transparent; border: none; color: var(--text-secondary);
+      font-size: 1.2rem; width: 40px; height: 40px; border-radius: 50%;
+      transition: 0.2s; display: inline-flex; align-items: center; justify-content: center;
+    }
+    .btn-icon:hover { background-color: var(--primary-container); color: var(--on-primary-container); }
+    
+    .btn-action {
+      background-color: var(--primary); 
+      color: var(--on-primary);
+      border: none; 
+      border-radius: var(--radius-btn);
+      padding: 0.75rem 1.5rem; 
+      font-weight: 500;
+      display: flex; 
+      align-items: center; 
+      justify-content: center;
+      gap: 10px;
+      transition: 0.2s;
+      text-decoration: none;
+      width: 100%;
+      cursor: grab;
+    }
+    .btn-action:hover { filter: brightness(1.1); transform: translateY(-1px); color: var(--on-primary); }
+    .btn-action:active { cursor: grabbing; }
+    
+    .btn-action.disabled {
+      background-color: var(--outline-variant);
+      color: var(--text-secondary);
+      cursor: not-allowed;
+      pointer-events: none;
+      opacity: 0.7;
+    }
+
+    a.btn-icon { 
+      text-decoration: none; 
+      color: var(--text-secondary);
+    }
+    a.btn-icon:hover { color: var(--on-primary-container); }
+
+    /* ESPECÍFICOS */
+    .script-icon {
+      width: 48px;
+      height: 48px;
+      background-color: var(--primary-container);
+      color: var(--on-primary-container);
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.5rem;
+      margin-bottom: 1rem;
+    }
+
+    .status-text {
+      font-size: 0.8rem;
+      font-weight: 500;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin-top: 10px;
+    }
+    .status-text.loading { color: var(--outline); }
+    .status-text.ready { color: var(--success); }
+    .status-text.error { color: #b3261e; }
+
+    .instrucoes-box {
+      background-color: var(--background);
+      border: 1px dashed var(--outline);
+      border-radius: 12px;
+      padding: 1rem;
+      font-size: 0.9rem;
+      color: var(--text-secondary);
+    }
+  </style>
+</head>
+<body>
+
+  <div class="container pt-3">
+    
+    <div class="app-bar">
+      <div class="d-flex align-items-center gap-2">
+        <span class="app-title">BOOKMARKLET</span>
+      </div>
+      <div class="d-flex gap-2">
+        <a href="../index.html" class="btn-icon" title="Voltar ao Início">
+          <i class="fas fa-home"></i>
+        </a>
+
+        <button class="btn-icon" onclick="window.toggleTheme()" title="Alternar Tema">
+          <i class="fas fa-moon" id="icon-theme"></i>
+        </button>
+      </div>
+    </div>
+
+    <div class="m-card mb-4">
+        <div class="d-flex align-items-center gap-3 mb-3">
+            <div>
+                <h5 class="app-title">COMO INSTALAR</h5>
+                <small style="color: var(--text-secondary)">Siga os passos abaixo para salvar ou atualizar</small>
+            </div>
+        </div>
+        
+        <div class="row g-3">
+            <div class="col-md-6">
+                <div class="instrucoes-box h-100">
+                    <strong class="d-block mb-1">1. Apague versões antigas</strong>
+                    Clique com o botão direito nos favoritos antigos na sua barra e selecione "Excluir".
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="instrucoes-box h-100">
+                    <strong class="d-block mb-1">2. Arraste e Solte</strong>
+                    Clique no botão azul e <strong>arraste-o</strong> para a sua barra de favoritos do Chrome.
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <h6 class="text-secondary fw-bold text-uppercase ms-2 mb-3 small ls-1">Scripts para o Sistema SEGES</h6>
+    <div class="row g-3" id="grid-scripts">
+        <div class="col-12 text-center py-5">
+            <div class="spinner-border text-primary" role="status"></div>
+            <p class="mt-2 text-secondary small">Conectando ao GitHub...</p>
+        </div>
+    </div>
+
+  </div>
+
+  <script>
+    // =========================================
+    // 1. CONFIGURAÇÃO
+    // =========================================
+    const GIST_USER = 'yuripossimozer';
+    const GIST_ID = '58dc48d46433046e8c924f099947b36c';
+    
+    const SCRIPTS = [
+        { arquivo: 'ajusteTabelas.js', titulo: 'Ajuste de Tabelas', label: 'A_TAB', desc: 'Ajusta a largura de tabelas.', icon: 'fa-table' },
+        { arquivo: 'declaracaoConclusao.js', titulo: 'Declaração de Conclusão', label: 'D_CON', desc: 'Ajusta formatação e remove elementos.', icon: 'fa-graduation-cap' },
+        { arquivo: 'declaracaoEscolaridade.js', titulo: 'Declaração de Escolaridade', label: 'D_ESC', desc: 'Ajusta formatação e remove elementos.', icon: 'fa-school' },
+        { arquivo: 'fichaIndividual.js', titulo: 'Ficha Individual', label: 'F_IND', desc: 'Ajusta formatação e remove elementos.', icon: 'fa-id-card' }
+    ];
+
+    // =========================================
+    // 2. CORE: CARREGAMENTO DE SCRIPTS
+    // =========================================
+    async function carregarScripts() {
+        const grid = document.getElementById('grid-scripts');
+        grid.innerHTML = ''; 
+
+        SCRIPTS.forEach((item, index) => {
+            const html = `
+                <div class="col-12 col-md-6 col-lg-3">
+                    <div class="m-card text-center align-items-center">
+                        <div class="script-icon"><i class="fas ${item.icon}"></i></div>
+                        <h5 class="fw-bold mb-1" style="font-size: 1rem;">${item.titulo}</h5>
+                        <p class="small text-secondary mb-3">${item.desc}</p>
+                        <a id="btn-${index}" href="#" class="btn-action disabled">
+                            <span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
+                            Carregando...
+                        </a>
+                        <div id="status-${index}" class="status-text loading">Buscando...</div>
+                    </div>
+                </div>
+            `;
+            grid.insertAdjacentHTML('beforeend', html);
+            baixarEProcessarScript(item, index);
+        });
+    }
+
+    function baixarEProcessarScript(item, index) {
+        const url = `https://gist.githubusercontent.com/${GIST_USER}/${GIST_ID}/raw/${item.arquivo}?v=` + new Date().getTime();
+
+        fetch(url)
+            .then(r => {
+                if(!r.ok) throw new Error("Erro 404");
+                return r.text();
+            })
+            .then(codigo => {
+                const codigoSeguro = `(function(){ \n${codigo}\n })();`;
+                const bookmarklet = `javascript:${encodeURIComponent(codigoSeguro)}`;
+                
+                const btn = document.getElementById(`btn-${index}`);
+                const status = document.getElementById(`status-${index}`);
+                
+                btn.href = bookmarklet;
+                btn.innerHTML = `${item.label}`;
+                btn.classList.remove('disabled');
+                btn.removeAttribute('title'); 
+                
+                status.innerText = "Pronto para Arrastar";
+                status.className = "status-text ready";
+            })
+            .catch(err => {
+                console.error(err);
+                const btn = document.getElementById(`btn-${index}`);
+                const status = document.getElementById(`status-${index}`);
+                
+                btn.innerHTML = `<i class="fas fa-exclamation-triangle"></i> Falha`;
+                status.innerText = "Erro ao baixar";
+                status.className = "status-text error";
+            });
+    }
+
+    // =========================================
+    // 3. UI: TEMAS E ANIMAÇÕES
+    // =========================================
+    function hexToRgb(hex) {
+      const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+      return result ? { r: parseInt(result[1], 16), g: parseInt(result[2], 16), b: parseInt(result[3], 16) } : null;
+    }
+
+    function rgbToHex(r, g, b) {
+      return "#" + ((1 << 24) + (r << 16) + (g << 8) + b).toString(16).slice(1);
+    }
+
+    function animarMetaCor(corOrigem, corDestino, duration) {
+      const start = hexToRgb(corOrigem);
+      const end = hexToRgb(corDestino);
+      const metaTag = document.getElementById('meta-theme-color');
+      
+      if (!start || !end || !metaTag) return;
+      let startTime = null;
+
+      function animationStep(timestamp) {
+        if (!startTime) startTime = timestamp;
+        const progress = timestamp - startTime;
+        const percent = Math.min(progress / duration, 1);
+        const r = Math.round(start.r + (end.r - start.r) * percent);
+        const g = Math.round(start.g + (end.g - start.g) * percent);
+        const b = Math.round(start.b + (end.b - start.b) * percent);
+        metaTag.setAttribute('content', rgbToHex(r, g, b));
+        if (progress < duration) window.requestAnimationFrame(animationStep);
+      }
+      window.requestAnimationFrame(animationStep);
+    }
+
+    window.toggleTheme = function() {
+      const htmlTag = document.documentElement;
+      const icon = document.getElementById('icon-theme');
+      const COR_LIGHT = '#fdfcff';
+      const COR_DARK = '#111315';
+      const isDark = htmlTag.getAttribute('data-theme') === 'dark';
+      
+      if (isDark) {
+        htmlTag.removeAttribute('data-theme');
+        if(icon) icon.classList.replace('fa-sun', 'fa-moon');
+        localStorage.setItem('theme', 'light');
+        animarMetaCor(COR_DARK, COR_LIGHT, 300);
+      } else {
+        htmlTag.setAttribute('data-theme', 'dark');
+        if(icon) icon.classList.replace('fa-moon', 'fa-sun');
+        localStorage.setItem('theme', 'dark');
+        animarMetaCor(COR_LIGHT, COR_DARK, 300);
+      }
+    };
+
+    window.onload = function() {
+        if (document.documentElement.getAttribute('data-theme') === 'dark') {
+            const icon = document.getElementById('icon-theme');
+            if(icon) icon.classList.replace('fa-moon', 'fa-sun');
+        }
+        carregarScripts();
+
+      // Registro do Service Worker
+      if ('serviceWorker' in navigator) {
+          navigator.serviceWorker.register('../pwa/sw.js')
+            .catch(err => console.log('Falha no SW:', err));
+      }
+    };    
+  </script>
+</body>
+</html>
