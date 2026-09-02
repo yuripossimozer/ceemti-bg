@@ -805,18 +805,36 @@
             <div class="col-md-8">
               <div class="d-flex justify-content-between align-items-center mb-3" style="height: 32px;">
                 <h6 class="text-secondary mb-0 text-uppercase small ls-1 fw-bold">Situação Final</h6>
-                <button onclick="window.copiarSituacao(this)" class="btn-action btn-sm"><i class="fas fa-copy"></i> Copiar</button>
+                <button id="btnCopiarSituacao" onclick="window.copiarSituacao(this)" class="btn-action btn-sm"><i class="fas fa-copy"></i> Copiar</button>
               </div>
               <div class="table-responsive">
                 <table class="table table-sm table-hover text-center align-middle">
-                  <thead><tr><th>Ano</th><th>CH</th><th>Dias</th><th>Faltas</th><th>%</th><th>Res</th></tr></thead>
+                  <thead>
+                    <tr>
+                      <th class="text-start">
+                        <label class="chk-container start" style="cursor: pointer;">
+                           <input type="checkbox" class="form-check-input" id="chk-sit-master" checked onchange="window.toggleAllSit(this)">
+                           <span>Ano</span>
+                        </label>
+                      </th>
+                      <th>CH</th><th>Dias</th><th>Faltas</th><th>%</th><th>Res</th>
+                    </tr>
+                  </thead>
                   <tbody>
-                    ${dados.trajetoria.map(t => { 
+                    ${dados.trajetoria.map((t, idx) => { 
+                      
+                      // Estrutura do checkbox individual usando o index como value
+                      const chkHtml = `
+                        <label class="chk-container start" style="cursor: pointer;">
+                          <input type="checkbox" class="form-check-input chk-sit-item" value="${idx}" checked onchange="window.atualizarEstadoSit()">
+                          <span>${safe(t.ano)}</span>
+                        </label>`;
+
                       if (t.existe) { 
-                        return `<tr><td>${safe(t.ano)}</td><td>${t.ch}</td><td>${t.dias}</td><td>${t.faltas}</td><td>${t.porc}</td>
+                        return `<tr><td class="text-start">${chkHtml}</td><td>${t.ch}</td><td>${t.dias}</td><td>${t.faltas}</td><td>${t.porc}</td>
                                 <td><span class="badge rounded-pill ${t.res==='AP'?'bg-success':'bg-secondary'}">${safe(t.res)}</span></td></tr>`; 
                       } else { 
-                        return `<tr><td class="text-secondary">${safe(t.ano)}</td><td class="text-secondary" colspan="5">-</td></tr>`; 
+                        return `<tr><td class="text-start text-secondary">${chkHtml}</td><td class="text-secondary" colspan="5">-</td></tr>`; 
                       } 
                     }).join('')}
                   </tbody>
@@ -874,6 +892,39 @@
       
       document.getElementById('resultadoArea').innerHTML = html; 
       window.carregarTabelaNotas(dados.aluno, dados.oc, dados.trajetoria); 
+    };
+
+    window.toggleAllSit = function(masterChk) {
+      const checkboxes = document.querySelectorAll('.chk-sit-item');
+      checkboxes.forEach(chk => chk.checked = masterChk.checked);
+      window.atualizarEstadoSit();
+    };
+
+    window.atualizarEstadoSit = function() {
+      const checkboxes = document.querySelectorAll('.chk-sit-item');
+      const marcados = document.querySelectorAll('.chk-sit-item:checked');
+      const master = document.getElementById('chk-sit-master');
+      const btn = document.getElementById('btnCopiarSituacao');
+
+      // Atualiza o master checkbox
+      if (checkboxes.length > 0 && master) {
+        master.checked = (marcados.length === checkboxes.length);
+        master.indeterminate = (marcados.length > 0 && marcados.length < checkboxes.length);
+      }
+
+      // Atualiza o botão de cópia
+      if (btn) {
+        if (marcados.length > 0) {
+           btn.style.visibility = 'visible';
+           btn.style.opacity = '1';
+           const isTudo = (marcados.length === checkboxes.length);
+           const novoTexto = isTudo ? '<i class="fas fa-copy"></i> Copiar' : '<i class="fas fa-copy"></i> Copiar Seleção';
+           if (btn.innerHTML !== novoTexto) btn.innerHTML = novoTexto;
+        } else {
+           btn.style.visibility = 'hidden';
+           btn.style.opacity = '0';
+        }
+      }
     };
 
     window.carregarTabelaNotas = function(aluno, oc, trajetoria) { 
@@ -1113,19 +1164,42 @@
 
     window.copiarSituacao = function(btnElement) { 
       if (!DADOS_RELATORIO_ATUAL) return; 
+
+      const checkboxes = document.querySelectorAll('.chk-sit-item');
+      if (checkboxes.length === 0) return;
+
       const cfg = { situacao: parseInt(document.getElementById('cfgSituacao').value) || 9 }; 
       const trajetoria = DADOS_RELATORIO_ATUAL.trajetoria; 
+      
       let linhaCH = "", linhaDias = "", linhaFaltas = "", linhaPorc = "", linhaRes = ""; 
+      let temSelecionado = false;
+
+      // Iteramos pelos checkboxes ao invés da trajetória pura
+      checkboxes.forEach(chk => {
+        if (chk.checked) {
+            temSelecionado = true;
+            // Pegamos o índice gravado no "value" do checkbox
+            const idx = parseInt(chk.value); 
+            const t = trajetoria[idx];
+            
+            if (t) {
+                linhaCH += window.formatarCelula(t.existe ? t.ch : "-", cfg.situacao) + "\t"; 
+                linhaDias += window.formatarCelula(t.existe ? t.dias : "-", cfg.situacao) + "\t"; 
+                linhaFaltas += window.formatarCelula(t.existe ? t.faltas : "-", cfg.situacao) + "\t"; 
+                linhaPorc += window.formatarCelula(t.existe ? t.porc : "-", cfg.situacao) + "\t"; 
+                linhaRes += window.formatarCelula(t.existe ? t.res : "-", cfg.situacao) + "\t"; 
+            }
+        }
+      });
       
-      trajetoria.forEach(t => { 
-        linhaCH += window.formatarCelula(t.existe ? t.ch : "-", cfg.situacao) + "\t"; 
-        linhaDias += window.formatarCelula(t.existe ? t.dias : "-", cfg.situacao) + "\t"; 
-        linhaFaltas += window.formatarCelula(t.existe ? t.faltas : "-", cfg.situacao) + "\t"; 
-        linhaPorc += window.formatarCelula(t.existe ? t.porc : "-", cfg.situacao) + "\t"; 
-        linhaRes += window.formatarCelula(t.existe ? t.res : "-", cfg.situacao) + "\t"; 
-      }); 
+      if (!temSelecionado) {
+          alert("Nenhum ano selecionado para cópia.");
+          return;
+      }
       
+      // Monta o texto final
       let texto = linhaCH + "\n" + linhaDias + "\n" + linhaFaltas + "\n" + linhaPorc + "\n" + linhaRes; 
+      
       window.executarCopiaReal(texto, btnElement); 
     };
 
