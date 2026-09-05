@@ -2,7 +2,7 @@
   "name": "CEEMTI BAIXO GUANDU",
   "short_name": "CEEMTI BG",
   "start_url": "./index.html",
-  "display": "standalone",
+  "display": "minimal-ui",
   "background_color": "#fdfcff",
   "theme_color": "#fdfcff",
   "orientation": "portrait",
