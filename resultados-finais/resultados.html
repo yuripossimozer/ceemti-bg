@@ -512,15 +512,17 @@
   </div>
 
   <!-- =========================================
-       MODAL: SESSÃO EXPIRADA
+       MODAL: RENOVAÇÃO DE SESSÃO
        ========================================= -->
   <div class="modal fade" id="modalRenovarSessao" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1">
     <div class="modal-dialog modal-dialog-centered">
       <div class="modal-content text-center p-4">
         <div class="mb-4">
-          <i class="fas fa-hourglass-end fa-3x mb-3" style="color: #ffc107;"></i>
-          <h5 style="color: var(--text-main); font-weight: 700;">Sessão Expirada</h5>
-          <p style="color: var(--text-secondary); font-size: 0.9rem;">Por segurança, o Google encerra a sessão a cada 60 minutos. Clique abaixo para renovar o acesso sem perder seus dados na tela.</p>
+          <i id="icone-renovacao" class="fas fa-hourglass-end fa-3x mb-3" style="color: #ffc107;"></i>
+          <h5 id="titulo-renovacao" style="color: var(--text-main); font-weight: 700;">Sessão Expirada</h5>
+          <p id="texto-renovacao" style="color: var(--text-secondary); font-size: 0.9rem;">
+            Por segurança, o Google encerra a sessão a cada 60 minutos. Clique abaixo para renovar o acesso sem perder seus dados na tela.
+          </p>
         </div>
         <div class="d-flex justify-content-center w-100">
            <div class="google-placeholder-rigid">
@@ -590,8 +592,8 @@
       TIMER_CHECK = setInterval(() => {
         const lastActive = localStorage.getItem(KEY_LAST_ACTIVE);
         if (lastActive && (Date.now() - parseInt(lastActive) >= SESSAO_TIMEOUT_MS)) {
-          window.fazerLogout();
-          alert("Sua sessão expirou por inatividade.");
+          clearInterval(TIMER_CHECK); 
+          window.mostrarModalRenovacao('inativo');
         }
       }, 60 * 1000); 
     }
@@ -621,20 +623,34 @@
       }
     }
 
-    window.mostrarModalRenovacao = function() {
+    window.mostrarModalRenovacao = function(motivo = 'api') {
+       const titulo = document.getElementById('titulo-renovacao');
+       const texto = document.getElementById('texto-renovacao');
+       const icone = document.getElementById('icone-renovacao');
+
+       if (motivo === 'inativo') {
+           if (icone) icone.className = "fas fa-bed fa-3x mb-3 text-warning";
+           if (titulo) titulo.innerText = "Você está aí?";
+           if (texto) texto.innerText = "Sua sessão foi suspensa devido a 25 minutos de inatividade. Confirme seu acesso para continuar de onde parou.";
+       } else {
+           if (icone) icone.className = "fas fa-hourglass-end fa-3x mb-3 text-warning";
+           if (titulo) titulo.innerText = "Sessão Expirada";
+           if (texto) texto.innerText = "Por segurança, a sessão expirou. Clique abaixo para renovar o acesso sem perder seus dados na tela.";
+       }
+
        const modalEl = document.getElementById('modalRenovarSessao');
        let bsModal = bootstrap.Modal.getInstance(modalEl);
        if (!bsModal) bsModal = new bootstrap.Modal(modalEl);
        
        bsModal.show();
 
-       // Inicializa o Google primeiro
+       // Inicializa o Google
        google.accounts.id.initialize({
           client_id: CLIENT_ID_GOOGLE,
           callback: handleCredentialResponse,
        });
 
-       // Só então renderiza o botão dentro do novo modal
+       // Renderiza o botão
        if (window.google) {
            google.accounts.id.renderButton(
               document.getElementById("btn-google-renew-area"),
@@ -658,6 +674,9 @@
       const bsModal = bootstrap.Modal.getInstance(modalRenovacaoEl);
       if (bsModal && modalRenovacaoEl.classList.contains('show')) {
          bsModal.hide();
+         
+         // RETOMA O MONITORAMENTO DE INATIVIDADE AQUI
+         iniciarMonitoramentoInatividade();
          
          // Feedback visual rápido avisando que pode tentar de novo
          const alerta = document.createElement('div');
@@ -808,7 +827,7 @@
       const json = await response.json();
       
       if (json.error === "TOKEN_EXPIRED") {
-         window.mostrarModalRenovacao();
+         window.mostrarModalRenovacao('api');
          throw new Error("TOKEN_EXPIRED");
       }
 
