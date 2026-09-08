@@ -490,7 +490,13 @@
        
        bsModal.show();
 
-       // Renderiza o botão Google DENTRO do novo modal
+       // 1. INICIALIZA O GOOGLE PRIMEIRO
+      google.accounts.id.initialize({
+        client_id: CLIENT_ID_GOOGLE,
+        callback: handleCredentialResponse,
+      });
+
+       // 2. SÓ ENTÃO RENDERIZA O BOTÃO DENTRO DO NOVO MODAL
        if (window.google) {
            google.accounts.id.renderButton(
               document.getElementById("btn-google-renew-area"),
