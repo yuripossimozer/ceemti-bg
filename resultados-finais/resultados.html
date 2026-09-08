@@ -523,7 +523,7 @@
          
          // Feedback visual rápido avisando que pode tentar de novo
          const alerta = document.createElement('div');
-         alerta.className = "alert alert-success position-fixed bottom-0 end-0 m-3 shadow";
+         alerta.className = "alert alert-success position-fixed bottom-0 end-0 m-3";
          alerta.style.zIndex = "10000";
          alerta.innerHTML = '<i class="fas fa-check-circle me-2"></i> Sessão renovada! Você já pode tentar realizar a ação novamente.';
          document.body.appendChild(alerta);
@@ -536,7 +536,7 @@
                   <div class="text-center p-5">
                       <i class="fas fa-check-circle fa-2x text-success mb-3"></i>
                       <p class="small mb-0" style="color: var(--text-secondary);">
-                          Sessão renovada com sucesso! Você já pode realizar a busca novamente.
+                          Sessão renovada! Você já pode realizar a busca novamente.
                       </p>
                   </div>`;
           }
