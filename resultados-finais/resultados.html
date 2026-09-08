@@ -483,8 +483,23 @@
       }
     }
 
+    window.mostrarModalRenovacao = function() {
+       const modalEl = document.getElementById('modalRenovarSessao');
+       let bsModal = bootstrap.Modal.getInstance(modalEl);
+       if (!bsModal) bsModal = new bootstrap.Modal(modalEl);
+       
+       bsModal.show();
+
+       // Renderiza o botão Google DENTRO do novo modal
+       if (window.google) {
+           google.accounts.id.renderButton(
+              document.getElementById("btn-google-renew-area"),
+              { theme: "outline", size: "large", shape: "pill", width: 250 }
+           );
+       }
+    };
+
     function handleCredentialResponse(response) {
-      // Login Sucesso
       USER_TOKEN = response.credential;
       localStorage.setItem(KEY_TOKEN, USER_TOKEN);
       localStorage.setItem(KEY_LAST_ACTIVE, Date.now());
@@ -492,6 +507,23 @@
       const dadosUser = parseJwt(USER_TOKEN);
       if (dadosUser?.email) {
         document.getElementById('lblUserEmail').innerText = dadosUser.email;
+      }
+
+      // NOVO: Verifica se estávamos no fluxo de RENOVAÇÃO
+      const modalRenovacaoEl = document.getElementById('modalRenovarSessao');
+      const bsModal = bootstrap.Modal.getInstance(modalRenovacaoEl);
+      if (bsModal && modalRenovacaoEl.classList.contains('show')) {
+         bsModal.hide();
+         
+         // Feedback visual rápido avisando que pode tentar de novo
+         const alerta = document.createElement('div');
+         alerta.className = "alert alert-success position-fixed bottom-0 end-0 m-3 shadow";
+         alerta.style.zIndex = "10000";
+         alerta.innerHTML = '<i class="fas fa-check-circle me-2"></i> Sessão renovada! Você já pode tentar realizar a ação novamente.';
+         document.body.appendChild(alerta);
+         setTimeout(() => alerta.remove(), 4000);
+         
+         return; // Encerra aqui. Não precisa recarregar a tela inteira.
       }
 
       // Troca de Telas
@@ -602,6 +634,13 @@
         body: JSON.stringify(bodyData) 
       });
       const json = await response.json();
+      
+      // NOVA LÓGICA: Se o token expirou
+      if (json.error === "TOKEN_EXPIRED") {
+         window.mostrarModalRenovacao();
+         throw new Error("TOKEN_EXPIRED");
+      }
+
       if (json.error) throw new Error(json.error);
       return json;
     }
@@ -763,8 +802,17 @@
       
       chamarAPI('getRelatorioCabecalho', { ano, turma, aluno })
         .then(dados => window.exibirCabecalho(dados))
-        .catch(e => area.innerHTML = `<div class="alert alert-danger">Erro: ${e.message}</div>`); 
-    };
+        .catch(e => {
+            if (e.message === "TOKEN_EXPIRED") {
+               area.innerHTML = `
+                 <div class="text-center p-5">
+                   <i class="fas fa-user-clock fa-2x text-warning mb-3"></i>
+                   <p class="small text-muted mb-0">Sessão suspensa. Conclua a autenticação na janela para continuar.</p>
+                 </div>`;
+            } else {
+               area.innerHTML = `<div class="alert alert-danger">Erro: ${e.message}</div>`;
+            }
+        });
 
     window.exibirCabecalho = function(dados) { 
       DADOS_RELATORIO_ATUAL = dados; 
@@ -940,8 +988,17 @@
           DADOS_NOTAS_ATUAL = tabela; 
           window.renderizarTabelaFinal(tabela, trajetoria); 
         })
-        .catch(e => divNotas.innerHTML = `<div class="alert alert-danger">Erro Notas: ${e.message}</div>`); 
-    };
+        .catch(e => {
+            if (e.message === "TOKEN_EXPIRED") {
+               divNotas.innerHTML = `
+                 <div class="text-center mt-4">
+                   <i class="fas fa-user-clock text-warning mb-2"></i>
+                   <p class="small text-muted mb-0">Faça login e repita a busca.</p>
+                 </div>`;
+            } else {
+               divNotas.innerHTML = `<div class="alert alert-danger">Erro Notas: ${e.message}</div>`;
+            }
+        });
 
     // =========================================================
     // LÓGICA DE SELEÇÃO E CÓPIA (ATUALIZADO)
@@ -1301,6 +1358,25 @@
   </script>
 
   <script src="https://accounts.google.com/gsi/client" async defer onload="window.onGoogleLibraryLoad()"></script>
-    
+  
+  <!-- Modal Sessão Expirada -->
+  <div class="modal fade" id="modalRenovarSessao" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content text-center p-4">
+        <div class="mb-4">
+          <i class="fas fa-hourglass-end fa-3x mb-3" style="color: #ffc107;"></i>
+          <h5 style="color: var(--text-main); font-weight: 700;">Sessão Expirada</h5>
+          <p style="color: var(--text-secondary); font-size: 0.9rem;">Por segurança, o Google encerra a sessão a cada 60 minutos. Clique abaixo para renovar o acesso sem perder seus dados na tela.</p>
+        </div>
+        <div class="d-flex justify-content-center w-100">
+           <!-- Reaproveita suas classes e lógica de botão -->
+           <div class="google-placeholder-rigid">
+               <div id="btn-google-renew-area"></div>
+           </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  
 </body>
 </html>
