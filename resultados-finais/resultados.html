@@ -528,7 +528,31 @@
          alerta.innerHTML = '<i class="fas fa-check-circle me-2"></i> Sessão renovada! Você já pode tentar realizar a ação novamente.';
          document.body.appendChild(alerta);
          setTimeout(() => alerta.remove(), 4000);
-         
+
+          // 1. Atualiza a área principal (Cabeçalho) se ela estiver mostrando o aviso
+          const area = document.getElementById('resultadoArea');
+          if (area && area.innerHTML.includes('fa-user-clock')) {
+              area.innerHTML = `
+                  <div class="text-center p-5">
+                      <i class="fas fa-check-circle fa-2x text-success mb-3"></i>
+                      <p class="small mb-0" style="color: var(--text-secondary);">
+                          Sessão renovada com sucesso! Você já pode realizar a busca novamente.
+                      </p>
+                  </div>`;
+          }
+          
+          // 2. Atualiza a área de notas se a suspensão tiver ocorrido durante o carregamento delas
+          const divNotas = document.getElementById('areaNotas');
+          if (divNotas && divNotas.innerHTML.includes('fa-user-clock')) {
+              divNotas.innerHTML = `
+                  <div class="text-center mt-4">
+                      <i class="fas fa-check-circle text-success mb-2"></i>
+                      <p class="small mb-0" style="color: var(--text-secondary);">
+                          Sessão renovada! Clique na disciplina para tentar carregar as notas novamente.
+                      </p>
+                  </div>`;
+          }
+        
          return; // Encerra aqui. Não precisa recarregar a tela inteira.
       }
 
