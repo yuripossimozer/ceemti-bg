@@ -23,6 +23,7 @@
         // Aplica o tema salvo imediatamente
         const savedTheme = localStorage.getItem('theme');
         const metaTheme = document.getElementById('meta-theme-color');
+        
         if (savedTheme === 'dark') {
           document.documentElement.setAttribute('data-theme', 'dark');
           if (metaTheme) metaTheme.setAttribute('content', '#111315');
@@ -36,7 +37,9 @@
         if (token && lastActive && (Date.now() - parseInt(lastActive) < timeout)) {
           document.documentElement.setAttribute('data-session', 'active');
         }
-      } catch (e) { console.error(e); }
+      } catch (e) { 
+        console.error(e); 
+      }
     })();
   </script>
 
@@ -93,7 +96,11 @@
     /* =========================================
        ESTRUTURA BASE
        ========================================= */
-    html { width: 100%; overflow-x: hidden; }
+    html { 
+      width: 100%; 
+      overflow-x: hidden; 
+    }
+    
     body {
       width: 100%;
       min-height: 100dvh;
@@ -108,6 +115,7 @@
     /* =========================================
        COMPONENTES UI
        ========================================= */
+       
     /* Header & Cards */
     .app-bar {
       background-color: var(--surface-container);
@@ -119,7 +127,13 @@
       margin-bottom: 1.5rem;
       border: 1px solid var(--outline-variant);
     }
-    .app-title { font-weight: 700; color: var(--text-secondary); font-size: 1.25rem; }
+    
+    .app-title { 
+      font-weight: 700; 
+      color: var(--text-secondary); 
+      font-size: 1.25rem; 
+    }
+    
     .m-card {
       background-color: var(--surface-container);
       border-radius: var(--radius-card);
@@ -135,6 +149,7 @@
       border-color: var(--outline-variant) !important;
       vertical-align: middle;
     }
+    
     .table thead th {
       background-color: var(--bg-header) !important;
       color: var(--text-secondary) !important;
@@ -146,13 +161,20 @@
       white-space: nowrap;
       padding: 12px;
     }
+    
     .table-hover tbody tr:hover td {
       background-color: var(--primary-container) !important;
       color: var(--on-primary-container) !important;
     }
     
     /* Formulários */
-    .form-label { font-size: 0.85rem; color: var(--text-secondary); font-weight: 500; margin-left: 4px; }
+    .form-label { 
+      font-size: 0.85rem; 
+      color: var(--text-secondary); 
+      font-weight: 500; 
+      margin-left: 4px; 
+    }
+    
     .form-select, .form-control {
       background-color: var(--background);
       border: 1px solid var(--outline);
@@ -160,48 +182,109 @@
       border-radius: 12px;
       padding: 0.75rem 1rem;
     }
-    .form-select:disabled { background-color: var(--outline-variant); opacity: 0.4; border-color: transparent; }
+    
+    .form-select:disabled { 
+      background-color: var(--outline-variant); 
+      opacity: 0.4; 
+      border-color: transparent; 
+    }
 
     /* Botões */
     .btn-icon {
-      background: transparent; border: none; color: var(--text-secondary);
-      font-size: 1.2rem; width: 40px; height: 40px; border-radius: 50%;
-      transition: 0.2s; display: inline-flex; align-items: center; justify-content: center;
+      background: transparent; 
+      border: none; 
+      color: var(--text-secondary);
+      font-size: 1.2rem; 
+      width: 40px; 
+      height: 40px; 
+      border-radius: 50%;
+      transition: 0.2s; 
+      display: inline-flex; 
+      align-items: center; 
+      justify-content: center;
     }
-    .btn-icon:hover { background-color: var(--primary-container); color: var(--on-primary-container); }
+    
+    .btn-icon:hover { 
+      background-color: var(--primary-container); 
+      color: var(--on-primary-container); 
+    }
     
     .btn-action {
-      background-color: var(--primary); color: var(--on-primary);
-      border: none; border-radius: var(--radius-btn);
-      padding: 0.5rem 1.2rem; font-weight: 500;
-      display: inline-flex; align-items: center; gap: 8px;
-      box-shadow: var(--shadow-sm); transition: transform 0.2s, box-shadow 0.2s, filter 0.2s;
-
+      background-color: var(--primary); 
+      color: var(--on-primary);
+      border: none; 
+      border-radius: var(--radius-btn);
+      padding: 0.5rem 1.2rem; 
+      font-weight: 500;
+      display: inline-flex; 
+      align-items: center; 
+      gap: 8px;
+      box-shadow: var(--shadow-sm); 
+      transition: transform 0.2s, box-shadow 0.2s, filter 0.2s;
     }
-    .btn-action:hover { filter: brightness(1.1); transform: translateY(-1px); box-shadow: var(--shadow-md); }
-    .btn-action.success-state { background-color: var(--success) !important; color: var(--on-success) !important; pointer-events: none; }
-    .btn-action.btn-sm { font-size: 0.75rem; padding: 0.25rem 0.8rem; }
+    
+    .btn-action:hover { 
+      filter: brightness(1.1); 
+      transform: translateY(-1px); 
+      box-shadow: var(--shadow-md); 
+    }
+    
+    .btn-action.success-state { 
+      background-color: var(--success) !important; 
+      color: var(--on-success) !important; 
+      pointer-events: none; 
+    }
+    
+    .btn-action.btn-sm { 
+      font-size: 0.75rem; 
+      padding: 0.25rem 0.8rem; 
+    }
 
     a.btn-icon { 
       text-decoration: none; 
       color: var(--text-secondary);
     }
-    a.btn-icon:hover { color: var(--on-primary-container); }    
+    
+    a.btn-icon:hover { 
+      color: var(--on-primary-container); 
+    }    
 
     /* Badges e Tags */
     .meta-tag {
-      display: inline-flex; align-items: center; gap: 6px;
-      padding: 4px 12px; border-radius: 8px;
+      display: inline-flex; 
+      align-items: center; 
+      gap: 6px;
+      padding: 4px 12px; 
+      border-radius: 8px;
       border: 1px solid var(--outline-variant);
-      color: var(--text-secondary); font-size: 0.8rem; font-weight: 500;
+      color: var(--text-secondary); 
+      font-size: 0.8rem; 
+      font-weight: 500;
     }
-    .meta-tag i { color: var(--primary); }
+    
+    .meta-tag i { 
+      color: var(--primary); 
+    }
 
     /* Modais */
-    .modal-content { background-color: var(--surface-container); color: var(--text-main); border: 1px solid var(--outline-variant); border-radius: var(--radius-card); }
-    .modal-header, .modal-footer { border-color: var(--outline-variant); }
-    .btn-close { filter: invert(0.5); } 
-    [data-theme="dark"] .btn-close { filter: invert(1); }
+    .modal-content { 
+      background-color: var(--surface-container); 
+      color: var(--text-main); 
+      border: 1px solid var(--outline-variant); 
+      border-radius: var(--radius-card); 
+    }
+    
+    .modal-header, .modal-footer { 
+      border-color: var(--outline-variant); 
+    }
+    
+    .btn-close { 
+      filter: invert(0.5); 
+    } 
+    
+    [data-theme="dark"] .btn-close { 
+      filter: invert(1); 
+    }
 
     /* --- CHECKBOXES DA TABELA --- */
     .chk-container {
@@ -210,9 +293,11 @@
       gap: 8px;
       justify-content: center; /* Centraliza no cabeçalho */
     }
+    
     .chk-container.start {
       justify-content: flex-start; /* Alinha a esquerda nas disciplinas */
     }
+    
     .chk-container .form-check-input {
       margin: 0;
       cursor: pointer;
@@ -220,6 +305,7 @@
       height: 18px;
       border: 1px solid var(--outline);
     }
+    
     .table .form-check-input:checked {
       background-color: var(--primary);
       border-color: var(--primary);
@@ -238,7 +324,6 @@
     }    
     
     /* --- DESTAQUE DE CÉLULA (MATRIZ DINÂMICA) --- */
-    /* A classe agora é aplicada no TD, não mais no TR */
     .table tbody td.highlight-cell {
       background-color: var(--primary-container) !important;
       color: var(--on-primary-container) !important;
@@ -250,14 +335,27 @@
        TELAS DE LOGIN E LOADING
        ========================================= */
     #login-screen {
-      position: fixed; inset: 0; width: 100%; height: 100dvh;
-      background: var(--background); z-index: 10000;
-      display: flex; flex-direction: column; justify-content: center; align-items: center;
+      position: fixed; 
+      inset: 0; 
+      width: 100%; 
+      height: 100dvh;
+      background: var(--background); 
+      z-index: 10000;
+      display: flex; 
+      flex-direction: column; 
+      justify-content: center; 
+      align-items: center;
     }
+    
     #overlay-loading {
-      position: fixed; inset: 0; background: var(--background);
-      z-index: 9999; display: flex; flex-direction: column;
-      justify-content: center; align-items: center;
+      position: fixed; 
+      inset: 0; 
+      background: var(--background);
+      z-index: 9999; 
+      display: flex; 
+      flex-direction: column;
+      justify-content: center; 
+      align-items: center;
     }
     
     /* Controle de visibilidade baseado na sessão */
@@ -268,14 +366,22 @@
 
     /* Placeholder rígido para evitar CLS do botão Google */
     .google-placeholder-rigid {
-      width: 250px; height: 44px;
-      display: flex; justify-content: center; align-items: center;
-      overflow: hidden; margin-bottom: 1rem; border-radius: 22px;
+      width: 250px; 
+      height: 44px;
+      display: flex; 
+      justify-content: center; 
+      align-items: center;
+      overflow: hidden; 
+      margin-bottom: 1rem; 
+      border-radius: 22px;
     }
   </style>
 </head>
 <body>
 
+  <!-- =========================================
+       TELA DE LOGIN
+       ========================================= -->
   <div id="login-screen">
     <div class="m-card p-5" style="border: 1px solid var(--outline-variant); max-width: 400px; width: 90%;">
       <div class="text-center mb-4">
@@ -297,13 +403,20 @@
     </div>
   </div>
 
+  <!-- =========================================
+       TELA DE CARREGAMENTO (OVERLAY)
+       ========================================= -->
   <div id="overlay-loading" style="display: none;">
     <div class="spinner-border text-primary" style="width: 3rem; height: 3rem;"></div>
     <p class="mt-3 small fw-bold" style="color: var(--text-secondary); letter-spacing: 1px;">CONECTANDO</p>
   </div>
 
+  <!-- =========================================
+       CONTEÚDO PRINCIPAL (APP)
+       ========================================= -->
   <div class="container" id="app-container">
     
+    <!-- Cabeçalho / Barra de Ferramentas -->
     <div class="app-bar">
       <div class="d-flex align-items-center gap-2">
         <span class="app-title">RESULTADOS FINAIS</span>
@@ -312,7 +425,6 @@
         <a href="../index.html" class="btn-icon" title="Voltar ao Início">
           <i class="fas fa-home"></i>
         </a>
-
         <button class="btn-icon" onclick="window.toggleTheme()" title="Alternar Tema">
           <i class="fas fa-moon" id="icon-theme"></i>
         </button>
@@ -322,6 +434,7 @@
       </div>
     </div>
 
+    <!-- Filtros de Busca -->
     <div class="m-card">
       <h5 class="mb-3" style="color: var(--text-secondary); font-weight: 700; font-size: 1.25rem;">FILTROS DE BUSCA</h5>
       <div class="row g-3">
@@ -346,10 +459,14 @@
       </div>
     </div>
 
+    <!-- Áreas de Resultados Dinâmicos -->
     <div id="resultadoArea"></div>
     <div id="areaNotas"></div>
   </div>
 
+  <!-- =========================================
+       MODAL: CONFIGURAÇÕES
+       ========================================= -->
   <div class="modal fade" id="modalConfig" tabindex="-1">
     <div class="modal-dialog mt-5">
       <div class="modal-content">
@@ -370,7 +487,6 @@
           </div>
           <div class="d-flex gap-2 mb-4">
              <button type="button" class="btn btn-outline-secondary btn-sm rounded-pill" onclick="window.resetarConfig()" data-bs-dismiss="modal">Padrão</button>
-             
              <button type="button" class="btn btn-action btn-sm" onclick="window.salvarConfig()" data-bs-dismiss="modal">Salvar</button>
           </div>
           
@@ -389,6 +505,27 @@
              </div>
              <button onclick="window.fazerLogout()" class="btn btn-sm btn-outline-danger rounded-pill px-3" data-bs-dismiss="modal">Sair</button>
           </div>
+          
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- =========================================
+       MODAL: SESSÃO EXPIRADA
+       ========================================= -->
+  <div class="modal fade" id="modalRenovarSessao" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content text-center p-4">
+        <div class="mb-4">
+          <i class="fas fa-hourglass-end fa-3x mb-3" style="color: #ffc107;"></i>
+          <h5 style="color: var(--text-main); font-weight: 700;">Sessão Expirada</h5>
+          <p style="color: var(--text-secondary); font-size: 0.9rem;">Por segurança, o Google encerra a sessão a cada 60 minutos. Clique abaixo para renovar o acesso sem perder seus dados na tela.</p>
+        </div>
+        <div class="d-flex justify-content-center w-100">
+           <div class="google-placeholder-rigid">
+               <div id="btn-google-renew-area"></div>
+           </div>
         </div>
       </div>
     </div>
@@ -398,7 +535,7 @@
 
   <script>
     // =========================================================
-    // 0. SEGURANÇA (NOVA FUNÇÃO)
+    // 0. SEGURANÇA
     // =========================================================
     window.escapeHTML = function(str) {
       if (!str) return "";
@@ -430,7 +567,6 @@
     // =========================================================
     // 2. GESTÃO DE SESSÃO & LOGIN GOOGLE
     // =========================================================
-    
     function verificarSessaoSalva() {
       const tokenSalvo = localStorage.getItem(KEY_TOKEN);
       const lastActive = localStorage.getItem(KEY_LAST_ACTIVE);
@@ -444,7 +580,9 @@
     }
 
     function atualizarAtividade() {
-      if(USER_TOKEN) localStorage.setItem(KEY_LAST_ACTIVE, Date.now());
+      if (USER_TOKEN) {
+        localStorage.setItem(KEY_LAST_ACTIVE, Date.now());
+      }
     }
 
     function iniciarMonitoramentoInatividade() {
@@ -490,13 +628,13 @@
        
        bsModal.show();
 
-       // 1. INICIALIZA O GOOGLE PRIMEIRO
-      google.accounts.id.initialize({
-        client_id: CLIENT_ID_GOOGLE,
-        callback: handleCredentialResponse,
-      });
+       // Inicializa o Google primeiro
+       google.accounts.id.initialize({
+          client_id: CLIENT_ID_GOOGLE,
+          callback: handleCredentialResponse,
+       });
 
-       // 2. SÓ ENTÃO RENDERIZA O BOTÃO DENTRO DO NOVO MODAL
+       // Só então renderiza o botão dentro do novo modal
        if (window.google) {
            google.accounts.id.renderButton(
               document.getElementById("btn-google-renew-area"),
@@ -515,7 +653,7 @@
         document.getElementById('lblUserEmail').innerText = dadosUser.email;
       }
 
-      // NOVO: Verifica se estávamos no fluxo de RENOVAÇÃO
+      // Verifica se estávamos no fluxo de RENOVAÇÃO
       const modalRenovacaoEl = document.getElementById('modalRenovarSessao');
       const bsModal = bootstrap.Modal.getInstance(modalRenovacaoEl);
       if (bsModal && modalRenovacaoEl.classList.contains('show')) {
@@ -529,7 +667,7 @@
          document.body.appendChild(alerta);
          setTimeout(() => alerta.remove(), 4000);
 
-          // 1. Atualiza a área principal (Cabeçalho) se ela estiver mostrando o aviso
+          // Atualiza a área principal (Cabeçalho) se ela estiver mostrando o aviso
           const area = document.getElementById('resultadoArea');
           if (area && area.innerHTML.includes('fa-user-clock')) {
               area.innerHTML = `
@@ -541,7 +679,7 @@
                   </div>`;
           }
           
-          // 2. Atualiza a área de notas se a suspensão tiver ocorrido durante o carregamento delas
+          // Atualiza a área de notas se a suspensão tiver ocorrido durante o carregamento delas
           const divNotas = document.getElementById('areaNotas');
           if (divNotas && divNotas.innerHTML.includes('fa-user-clock')) {
               divNotas.innerHTML = `
@@ -553,10 +691,10 @@
                   </div>`;
           }
         
-         return; // Encerra aqui. Não precisa recarregar a tela inteira.
+         return; 
       }
 
-      // Troca de Telas
+      // Troca de Telas (Fluxo Normal)
       document.getElementById('login-screen').style.display = 'none';
       document.getElementById('overlay-loading').style.display = 'flex';
       
@@ -569,7 +707,6 @@
           iniciarMonitoramentoInatividade();
         })
         .catch(e => {
-          // Falha ao carregar dados
           document.getElementById('overlay-loading').style.display = 'none';
           document.getElementById('login-screen').style.display = 'flex';
           document.getElementById('login-error').innerText = e.message; 
@@ -585,6 +722,7 @@
       
       localStorage.removeItem(KEY_TOKEN);
       localStorage.removeItem(KEY_LAST_ACTIVE);
+      
       if (TIMER_CHECK) clearInterval(TIMER_CHECK);
       
       document.documentElement.removeAttribute('data-session');
@@ -613,7 +751,7 @@
       try {
         if (document.documentElement.getAttribute('data-theme') === 'dark') {
            const icon = document.getElementById('icon-theme');
-           if(icon) icon.classList.replace('fa-moon', 'fa-sun');
+           if (icon) icon.classList.replace('fa-moon', 'fa-sun');
         }
         window.carregarConfig();
       } catch(e) {}
@@ -652,20 +790,23 @@
     function parseJwt(token) {
       try { 
         return JSON.parse(decodeURIComponent(window.atob(token.split('.')[1].replace(/-/g, '+').replace(/_/g, '/')).split('').map(c => '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2)).join(''))); 
-      } catch (e) { return null; }
+      } catch (e) { 
+        return null; 
+      }
     }
 
     async function chamarAPI(action, payload = {}) {
       atualizarAtividade();
       const bodyData = { userToken: USER_TOKEN, action: action, ...payload };
+      
       const response = await fetch(API_URL, { 
         method: "POST", 
         headers: { "Content-Type": "text/plain;charset=utf-8" }, 
         body: JSON.stringify(bodyData) 
       });
+      
       const json = await response.json();
       
-      // NOVA LÓGICA: Se o token expirou
       if (json.error === "TOKEN_EXPIRED") {
          window.mostrarModalRenovacao();
          throw new Error("TOKEN_EXPIRED");
@@ -678,7 +819,11 @@
     // --- Animação de Cor (Meta Tag) ---
     function hexToRgb(hex) {
       const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
-      return result ? { r: parseInt(result[1], 16), g: parseInt(result[2], 16), b: parseInt(result[3], 16) } : null;
+      return result ? { 
+        r: parseInt(result[1], 16), 
+        g: parseInt(result[2], 16), 
+        b: parseInt(result[3], 16) 
+      } : null;
     }
 
     function rgbToHex(r, g, b) {
@@ -691,16 +836,20 @@
       const metaTag = document.getElementById('meta-theme-color');
       
       if (!start || !end || !metaTag) return;
+      
       let startTime = null;
 
       function animationStep(timestamp) {
         if (!startTime) startTime = timestamp;
         const progress = timestamp - startTime;
         const percent = Math.min(progress / duration, 1);
+        
         const r = Math.round(start.r + (end.r - start.r) * percent);
         const g = Math.round(start.g + (end.g - start.g) * percent);
         const b = Math.round(start.b + (end.b - start.b) * percent);
+        
         metaTag.setAttribute('content', rgbToHex(r, g, b));
+        
         if (progress < duration) window.requestAnimationFrame(animationStep);
       }
       window.requestAnimationFrame(animationStep);
@@ -715,12 +864,12 @@
       
       if (isDark) {
         htmlTag.removeAttribute('data-theme');
-        if(icon) icon.classList.replace('fa-sun', 'fa-moon');
+        if (icon) icon.classList.replace('fa-sun', 'fa-moon');
         localStorage.setItem('theme', 'light');
         animarMetaCor(COR_DARK, COR_LIGHT, 300);
       } else {
         htmlTag.setAttribute('data-theme', 'dark');
-        if(icon) icon.classList.replace('fa-moon', 'fa-sun');
+        if (icon) icon.classList.replace('fa-moon', 'fa-sun');
         localStorage.setItem('theme', 'dark');
         animarMetaCor(COR_LIGHT, COR_DARK, 300);
       }
@@ -733,11 +882,16 @@
       try { 
         const raw = localStorage.getItem('appEscolarConfig'); 
         const cfg = raw ? JSON.parse(raw) : null; 
+        
         if (cfg) { 
           if(document.getElementById('cfgNotas')) document.getElementById('cfgNotas').value = cfg.notas; 
           if(document.getElementById('cfgSituacao')) document.getElementById('cfgSituacao').value = cfg.situacao; 
-        } else { window.resetarConfig(); } 
-      } catch (e) { window.resetarConfig(); } 
+        } else { 
+          window.resetarConfig(); 
+        } 
+      } catch (e) { 
+        window.resetarConfig(); 
+      } 
     };
 
     window.salvarConfig = function() { 
@@ -768,10 +922,12 @@
       DADOS_CACHE = dados; 
       const selAno = document.getElementById('selAno'); 
       const anos = Object.keys(DADOS_CACHE).sort().reverse(); 
+      
       selAno.innerHTML = '<option value="" selected disabled>Selecione</option>'; 
       anos.forEach(ano => { 
         let opt = document.createElement('option'); 
-        opt.value = ano; opt.text = ano; 
+        opt.value = ano; 
+        opt.text = ano; 
         selAno.appendChild(opt); 
       }); 
     };
@@ -791,9 +947,11 @@
       selTurma.innerHTML = '<option value="" selected disabled>Selecione</option>'; 
       turmas.forEach(t => { 
         let opt = document.createElement('option'); 
-        opt.value = t; opt.text = t; 
+        opt.value = t; 
+        opt.text = t; 
         selTurma.appendChild(opt); 
       }); 
+      
       selTurma.disabled = false; 
     };
 
@@ -809,9 +967,11 @@
       selAluno.innerHTML = '<option value="" selected disabled>Selecione</option>'; 
       alunos.forEach(a => { 
         let opt = document.createElement('option'); 
-        opt.value = a; opt.text = a; 
+        opt.value = a; 
+        opt.text = a; 
         selAluno.appendChild(opt); 
       }); 
+      
       selAluno.disabled = false; 
     };
 
@@ -824,11 +984,13 @@
       
       document.getElementById('areaNotas').innerHTML = ''; 
       const area = document.getElementById('resultadoArea'); 
+      
       area.innerHTML = `
         <div class="text-center p-5">
           <div class="spinner-border text-primary"></div>
           <p class="mt-3 small fw-bold text-secondary text-uppercase">Buscando dados</p>
-        </div>`; 
+        </div>
+      `; 
       
       chamarAPI('getRelatorioCabecalho', { ano, turma, aluno })
         .then(dados => window.exibirCabecalho(dados))
@@ -838,7 +1000,8 @@
                  <div class="text-center p-5">
                    <i class="fas fa-user-clock fa-2x text-warning mb-3"></i>
                    <p class="small mb-0" style="color: var(--text-secondary);">Sessão suspensa. Conclua a autenticação na janela para continuar.</p>
-                 </div>`;
+                 </div>
+               `;
             } else {
                area.innerHTML = `<div class="alert alert-danger">Erro: ${e.message}</div>`;
             }
@@ -873,9 +1036,19 @@
               </div>
               <div class="table-responsive">
                 <table class="table table-sm table-hover text-center">
-                  <thead><tr><th>Ano</th><th>Turma</th></tr></thead>
+                  <thead>
+                    <tr>
+                      <th>Ano</th>
+                      <th>Turma</th>
+                    </tr>
+                  </thead>
                   <tbody>
-                    ${dados.trajetoria.map(t => `<tr><td>${safe(t.ano)}</td><td>${safe(t.turma)}</td></tr>`).join('')}
+                    ${dados.trajetoria.map(t => `
+                      <tr>
+                        <td>${safe(t.ano)}</td>
+                        <td>${safe(t.turma)}</td>
+                      </tr>
+                    `).join('')}
                   </tbody>
                 </table>
               </div>
@@ -884,7 +1057,9 @@
             <div class="col-md-8">
               <div class="d-flex justify-content-between align-items-center mb-3" style="height: 32px;">
                 <h6 class="text-secondary mb-0 text-uppercase small ls-1 fw-bold">Situação Final</h6>
-                <button id="btnCopiarSituacao" onclick="window.copiarSituacao(this)" class="btn-action btn-sm"><i class="fas fa-copy"></i> Copiar</button>
+                <button id="btnCopiarSituacao" onclick="window.copiarSituacao(this)" class="btn-action btn-sm">
+                  <i class="fas fa-copy"></i> Copiar
+                </button>
               </div>
               <div class="table-responsive">
                 <table class="table table-sm table-hover text-center align-middle">
@@ -896,24 +1071,40 @@
                            <span>Ano</span>
                         </label>
                       </th>
-                      <th>CH</th><th>Dias</th><th>Faltas</th><th>%</th><th>Res</th>
+                      <th>CH</th>
+                      <th>Dias</th>
+                      <th>Faltas</th>
+                      <th>%</th>
+                      <th>Res</th>
                     </tr>
                   </thead>
                   <tbody>
                     ${dados.trajetoria.map((t, idx) => { 
-                      
-                      // Estrutura do checkbox individual usando o index como value
                       const chkHtml = `
                         <label class="chk-container start" style="cursor: pointer;">
                           <input type="checkbox" class="form-check-input chk-sit-item" value="${idx}" checked onchange="window.atualizarEstadoSit()">
                           <span>${safe(t.ano)}</span>
-                        </label>`;
+                        </label>
+                      `;
 
                       if (t.existe) { 
-                        return `<tr><td class="text-start">${chkHtml}</td><td>${t.ch}</td><td>${t.dias}</td><td>${t.faltas}</td><td>${t.porc}</td>
-                                <td><span class="badge rounded-pill ${t.res==='AP'?'bg-success':'bg-secondary'}">${safe(t.res)}</span></td></tr>`; 
+                        return `
+                          <tr>
+                            <td class="text-start">${chkHtml}</td>
+                            <td>${t.ch}</td>
+                            <td>${t.dias}</td>
+                            <td>${t.faltas}</td>
+                            <td>${t.porc}</td>
+                            <td><span class="badge rounded-pill ${t.res === 'AP' ? 'bg-success' : 'bg-secondary'}">${safe(t.res)}</span></td>
+                          </tr>
+                        `; 
                       } else { 
-                        return `<tr><td class="text-start text-secondary">${chkHtml}</td><td class="text-secondary" colspan="5">-</td></tr>`; 
+                        return `
+                          <tr>
+                            <td class="text-start text-secondary">${chkHtml}</td>
+                            <td class="text-secondary" colspan="5">-</td>
+                          </tr>
+                        `; 
                       } 
                     }).join('')}
                   </tbody>
@@ -922,34 +1113,38 @@
             </div>
           </div>
           
-          ${ temSistec ? `
+          ${temSistec ? `
           <div class="mt-4 p-3 rounded" style="background-color: var(--background); border: 1px solid var(--outline-variant);">
             <div class="d-flex justify-content-between align-items-center mb-2">
               <small class="text-secondary fw-bold text-uppercase">Código SISTEC</small>
-              <button onclick="window.copiarSistec(this)" class="btn-action btn-sm"><i class="fas fa-copy"></i> Copiar</button>
+              <button onclick="window.copiarSistec(this)" class="btn-action btn-sm">
+                <i class="fas fa-copy"></i> Copiar
+              </button>
             </div>
             <div class="mb-0 ps-1 small mt-2" style="color: var(--text-secondary); font-family: monospace; font-size: 0.9rem;">
                 ${safe(dados.sistec)}
             </div>
-          </div>` : '' }
+          </div>` : ''}
 
           <div class="mt-3 p-3 rounded" style="background-color: var(--background); border: 1px solid var(--outline-variant);">
             
             <div class="d-flex justify-content-between align-items-center mb-3 border-bottom pb-2" style="border-color: rgba(0,0,0,0.05) !important;">
                <div class="d-flex align-items-center gap-2">
-                  ${ temObs 
-                    ? `
+                  ${temObs ? `
                     <label class="chk-container" style="cursor: pointer; margin-bottom: 0;">
                         <input type="checkbox" class="form-check-input" id="chk-obs-master" checked onchange="window.toggleAllObs(this)">
                         <span class="text-secondary fw-bold text-uppercase small" style="user-select: none;">Observações</span>
-                    </label>` 
-                    : `
+                    </label>
+                  ` : `
                     <span class="text-secondary fw-bold text-uppercase small">Observações</span>
-                    ` 
-                  }
+                  `}
                </div>
                
-               ${ temObs ? `<button id="btnCopiarObs" onclick="window.copiarObservacoesSelecionadas(this)" class="btn-action btn-sm"><i class="fas fa-copy"></i> Copiar</button>` : '' }
+               ${temObs ? `
+                 <button id="btnCopiarObs" onclick="window.copiarObservacoesSelecionadas(this)" class="btn-action btn-sm">
+                   <i class="fas fa-copy"></i> Copiar
+                 </button>
+               ` : ''}
             </div>
 
             <div class="d-flex flex-column gap-2">
@@ -963,11 +1158,12 @@
                    </span>
                 </div>
               `).join('')}
-              ${ !temObs ? '<span class="small style="color: var(--text-secondary);" fst-italic ms-1">Nenhuma observação registrada.</span>' : ''}
+              ${!temObs ? '<span class="small style="color: var(--text-secondary);" fst-italic ms-1">Nenhuma observação registrada.</span>' : ''}
             </div>
           </div>
 
-        </div>`; 
+        </div>
+      `; 
       
       document.getElementById('resultadoArea').innerHTML = html; 
       window.carregarTabelaNotas(dados.aluno, dados.oc, dados.trajetoria); 
@@ -985,13 +1181,11 @@
       const master = document.getElementById('chk-sit-master');
       const btn = document.getElementById('btnCopiarSituacao');
 
-      // Atualiza o master checkbox
       if (checkboxes.length > 0 && master) {
         master.checked = (marcados.length === checkboxes.length);
         master.indeterminate = (marcados.length > 0 && marcados.length < checkboxes.length);
       }
 
-      // Atualiza o botão de cópia
       if (btn) {
         if (marcados.length > 0) {
            btn.style.visibility = 'visible';
@@ -1012,7 +1206,8 @@
         <div class="text-center mt-4">
           <div class="spinner-grow text-primary spinner-grow-sm"></div>
           <span class="ms-3 small fw-bold text-secondary text-uppercase">Carregando notas</span>
-        </div>`; 
+        </div>
+      `; 
       
       chamarAPI('getTabelaNotas', { aluno, oc, trajetoria })
         .then(tabela => { 
@@ -1025,7 +1220,8 @@
                  <div class="text-center mt-4">
                    <i class="fas fa-user-clock text-warning mb-2"></i>
                    <p class="small style="color: var(--text-secondary);" mb-0">Faça login e repita a busca.</p>
-                 </div>`;
+                 </div>
+               `;
             } else {
                divNotas.innerHTML = `<div class="alert alert-danger">Erro Notas: ${e.message}</div>`;
             }
@@ -1036,24 +1232,23 @@
     // LÓGICA DE SELEÇÃO E CÓPIA (ATUALIZADO)
     // =========================================================
 
-    // Função auxiliar para formatar células com Tabs
     window.formatarCelula = function(valor, mesclagem) { 
       if (!valor) valor = "-"; 
-      // Garante que mesclagem seja pelo menos 1
       const qtdTabs = Math.max(0, (mesclagem || 1) - 1);
       const tabs = "\t".repeat(qtdTabs); 
       return valor + tabs; 
     };    
     
     window.renderizarTabelaFinal = function(tabela, trajetoria) { 
-      // Atalho de segurança
       const safe = window.escapeHTML;
 
       let html = `
         <div class="m-card">
           <div class="d-flex justify-content-between align-items-center mb-3">
             <h6 class="text-secondary mb-0 text-uppercase small ls-1 fw-bold">APROVEITAMENTO</h6>
-            <button id="btnCopiarNotas" onclick="window.copiarNotas(this)" class="btn-action btn-sm"><i class="fas fa-copy"></i> Copiar</button>
+            <button id="btnCopiarNotas" onclick="window.copiarNotas(this)" class="btn-action btn-sm">
+              <i class="fas fa-copy"></i> Copiar
+            </button>
           </div>
           <div class="table-responsive">
             <table class="table table-hover table-bordered text-center align-middle" style="font-size: 0.85rem;" id="tabelaNotasMain">
@@ -1071,10 +1266,15 @@
                         <input type="checkbox" class="form-check-input chk-col-header" data-col-index="${index}" checked onchange="window.atualizarVisualMatriz()">
                         <span>${t.existe ? safe(t.turma) : safe(t.ano)}</span>
                       </label>
-                    </th>`).join('')}
+                    </th>
+                  `).join('')}
                 </tr>
                 <tr>
-                  ${trajetoria.map(() => `<th class="text-secondary small">PTS</th><th class="text-secondary small">CH</th><th class="text-secondary small">FT</th>`).join('')}
+                  ${trajetoria.map(() => `
+                    <th class="text-secondary small">PTS</th>
+                    <th class="text-secondary small">CH</th>
+                    <th class="text-secondary small">FT</th>
+                  `).join('')}
                 </tr>
               </thead>
               <tbody>
@@ -1086,12 +1286,19 @@
                         <span>${safe(linha.disciplina)}</span>
                       </label>
                     </td>
-                    ${linha.anos.map((ano, idxAno) => `<td data-year-idx="${idxAno}">${safe(ano.nota)}</td><td data-year-idx="${idxAno}">${safe(ano.ch)}</td><td data-year-idx="${idxAno}">${safe(ano.falta)}</td>`).join('')}
-                  </tr>`).join('')}
+                    ${linha.anos.map((ano, idxAno) => `
+                      <td data-year-idx="${idxAno}">${safe(ano.nota)}</td>
+                      <td data-year-idx="${idxAno}">${safe(ano.ch)}</td>
+                      <td data-year-idx="${idxAno}">${safe(ano.falta)}</td>
+                    `).join('')}
+                  </tr>
+                `).join('')}
               </tbody>
             </table>
           </div>
-        </div>`; 
+        </div>
+      `; 
+      
       document.getElementById('areaNotas').innerHTML = html; 
     };
 
@@ -1099,11 +1306,9 @@
     // LÓGICA DE VISUALIZAÇÃO E CONTROLE (MATRIZ UNIFICADA)
     // =========================================================
 
-    // Variável para o agendamento visual da tabela
     let frameVisualUpdate = null;
 
     window.atualizarVisualMatriz = function() {
-      // --- PARTE 1: Lógica Instantânea (Botão) ---
       const colHeaders = document.querySelectorAll('.chk-col-header');
       const rowChecks = document.querySelectorAll('.chk-row-item');
       
@@ -1114,11 +1319,9 @@
       const btn = document.getElementById('btnCopiarNotas');
       if (btn) btn.style.visibility = temDadosParaCopiar ? 'visible' : 'hidden';
 
-      // --- PARTE 2: Lógica Visual (Highlight + Indeterminate) ---
       if (frameVisualUpdate) cancelAnimationFrame(frameVisualUpdate);
       
       frameVisualUpdate = requestAnimationFrame(() => {
-        // Recalcula contagens
         const mapaCols = Array.from(colHeaders).map(chk => chk.checked);
         const mapaRows = Array.from(rowChecks).map(chk => chk.checked);
 
@@ -1129,21 +1332,17 @@
         const isTodasRows = (rowChecks.length > 0 && rowChecks.length === qtdRowsChecked);
         const isTudoFull = (isTodasCols && isTodasRows);
 
-        // Atualiza Texto do Botão
         if (btn && temDadosParaCopiar) {
              const novoTexto = isTudoFull ? '<i class="fas fa-copy"></i> Copiar' : '<i class="fas fa-copy"></i> Copiar Seleção';
              if (btn.innerHTML !== novoTexto) btn.innerHTML = novoTexto;
         }
 
-        // --- NOVIDADE: Atualiza Master Checkbox com Indeterminado ---
         const master = document.getElementById('chk-all-rows');
         if (master) {
            master.checked = isTodasRows;
-           // Define como indeterminado se: Tem algo marcado E não são todos
            master.indeterminate = (qtdRowsChecked > 0 && qtdRowsChecked < rowChecks.length);
         }
 
-        // Pinta a Tabela
         rowChecks.forEach((chk, idxRow) => {
           const tr = chk.closest('tr');
           const isRowAtiva = mapaRows[idxRow];
@@ -1152,6 +1351,7 @@
           for (let i = 1; i < cells.length; i++) {
              const td = cells[i];
              const anoIdx = parseInt(td.getAttribute('data-year-idx'));
+             
              if (isNaN(anoIdx)) continue;
 
              const isColAtiva = mapaCols[anoIdx];
@@ -1169,61 +1369,49 @@
       });
     };
 
-    // Função Wrapper 1: Master Checkbox
     window.toggleAllRows = function(masterChk) {
       const checkboxes = document.querySelectorAll('.chk-row-item');
       checkboxes.forEach(chk => chk.checked = masterChk.checked);
-      window.atualizarVisualMatriz(); // Chama a central
+      window.atualizarVisualMatriz(); 
     };
 
-    // Função Wrapper 2: Checkbox Individual
     window.verificarMasterCheckbox = function() {
-      window.atualizarVisualMatriz(); // Chama a central
+      window.atualizarVisualMatriz(); 
     };
 
     window.copiarNotas = function(btnElement) { 
-      // 1. Verificação de Segurança Inicial
       if (!DADOS_NOTAS_ATUAL) {
         alert("Erro: Dados não carregados na memória.");
         return;
       }
 
       try {
-        // 2. Leitura Segura da Configuração
         const inputCfg = document.getElementById('cfgNotas');
-        // Se o input estiver vazio ou inválido, força 3 tabs
         const valorCfg = inputCfg ? parseInt(inputCfg.value) : 3;
         const notasTabs = isNaN(valorCfg) ? 3 : valorCfg;
         
         let texto = ""; 
         
-        // 3. Identifica quais colunas (Anos) estão marcadas
         const colunasHeaders = document.querySelectorAll('.chk-col-header');
         if (colunasHeaders.length === 0) throw new Error("Cabeçalhos de coluna não encontrados.");
-        const colunasMarcadas = Array.from(colunasHeaders).map(chk => chk.checked);
         
-        // 4. Itera sobre as linhas da tabela visual
+        const colunasMarcadas = Array.from(colunasHeaders).map(chk => chk.checked);
         const linhasDOM = document.querySelectorAll('#tabelaNotasMain tbody tr');
         
         linhasDOM.forEach((tr) => {
-          // Verifica se a checkbox dessa linha está marcada
           const chkRow = tr.querySelector('.chk-row-item');
           
           if (chkRow && chkRow.checked) {
-            // AQUI ESTÁ A CORREÇÃO DE SEGURANÇA:
-            // Usamos o atributo data-row-index para garantir que pegamos o dado certo
             const idxDados = parseInt(chkRow.getAttribute('data-row-index'));
             const dadosLinha = DADOS_NOTAS_ATUAL[idxDados]; 
             
-            if (!dadosLinha) return; // Pula se não achar o dado (segurança)
+            if (!dadosLinha) return; 
 
             let linhaTexto = ""; 
             
-            // Itera sobre os anos (colunas)
             if (dadosLinha.anos) {
               dadosLinha.anos.forEach((ano, idxAno) => { 
-    // Segurança: Verifica se existe checkbox para esse índice
-    if (colunasMarcadas[idxAno] !== undefined && colunasMarcadas[idxAno] === true) {
+                if (colunasMarcadas[idxAno] !== undefined && colunasMarcadas[idxAno] === true) {
                    linhaTexto += window.formatarCelula(ano.nota, notasTabs) + "\t" + 
                                  window.formatarCelula(ano.ch, notasTabs) + "\t" + 
                                  window.formatarCelula(ano.falta, notasTabs) + "\t"; 
@@ -1231,7 +1419,6 @@
               });
             }
             
-            // Só adiciona a quebra de linha se houver conteúdo
             if (linhaTexto) {
               texto += linhaTexto + "\n";
             }
@@ -1263,11 +1450,9 @@
       let linhaCH = "", linhaDias = "", linhaFaltas = "", linhaPorc = "", linhaRes = ""; 
       let temSelecionado = false;
 
-      // Iteramos pelos checkboxes ao invés da trajetória pura
       checkboxes.forEach(chk => {
         if (chk.checked) {
             temSelecionado = true;
-            // Pegamos o índice gravado no "value" do checkbox
             const idx = parseInt(chk.value); 
             const t = trajetoria[idx];
             
@@ -1286,7 +1471,6 @@
           return;
       }
       
-      // Monta o texto final
       let texto = linhaCH + "\n" + linhaDias + "\n" + linhaFaltas + "\n" + linhaPorc + "\n" + linhaRes; 
       
       window.executarCopiaReal(texto, btnElement); 
@@ -1294,58 +1478,50 @@
 
     window.copiarObservacoes = function(btnElement) { 
       if (!DADOS_RELATORIO_ATUAL) return; 
+      
       const listaObs = DADOS_RELATORIO_ATUAL.trajetoria
         .filter(t => t.existe && t.obs && String(t.obs).trim() !== "")
         .map(t => t.obs); 
       
-      if (listaObs.length === 0) { alert("Não há observações."); return; } 
+      if (listaObs.length === 0) { 
+        alert("Não há observações."); 
+        return; 
+      } 
+      
       window.executarCopiaReal(listaObs.join("\n"), btnElement); 
     };
 
     window.copiarSistec = function(btnElement) {
       if (!DADOS_RELATORIO_ATUAL || !DADOS_RELATORIO_ATUAL.sistec) return;
-      // Envia apenas o código para a área de transferência
       window.executarCopiaReal(DADOS_RELATORIO_ATUAL.sistec, btnElement);
     };
 
-    // --- Lógica Avançada de Checkbox para Observações ---
-
-    // 1. Checkbox Mestre (Selecionar Tudo)
     window.toggleAllObs = function(masterChk) {
       const checkboxes = document.querySelectorAll('.chk-obs-item');
       checkboxes.forEach(chk => chk.checked = masterChk.checked);
-      // Força a atualização do estado do botão após marcar/desmarcar tudo
       window.atualizarEstadoObs();
     };
 
-    // 2. Função Central de Estado (Sincronia, Visibilidade e Texto)
     window.atualizarEstadoObs = function() {
       const checkboxes = document.querySelectorAll('.chk-obs-item');
       const marcados = document.querySelectorAll('.chk-obs-item:checked');
       const master = document.getElementById('chk-obs-master');
       const btn = document.getElementById('btnCopiarObs');
 
-      // A. Sincronia do Master Checkbox
       if (checkboxes.length > 0 && master) {
-        // Marca se todos estiverem marcados
         master.checked = (marcados.length === checkboxes.length);
-        // Fica 'tracinho' se tiver algo marcado, mas não tudo
         master.indeterminate = (marcados.length > 0 && marcados.length < checkboxes.length);
       }
 
-      // B. Visibilidade e Texto do Botão
       if (btn) {
         if (marcados.length > 0) {
            btn.style.visibility = 'visible';
            btn.style.opacity = '1';
            
-           // --- NOVA LÓGICA DE TEXTO ---
            const isTudo = (marcados.length === checkboxes.length);
            const novoTexto = isTudo ? '<i class="fas fa-copy"></i> Copiar' : '<i class="fas fa-copy"></i> Copiar Seleção';
            
-           // Só altera o HTML se o texto for diferente (evita repaint desnecessário)
            if (btn.innerHTML !== novoTexto) btn.innerHTML = novoTexto;
-
         } else {
            btn.style.visibility = 'hidden';
            btn.style.opacity = '0';
@@ -1353,29 +1529,29 @@
       }
     };
 
-    // 3. Copiar (Já pega o value limpo do HTML)
     window.copiarObservacoesSelecionadas = function(btnElement) {
       const marcados = document.querySelectorAll('.chk-obs-item:checked');
-      
-      if (marcados.length === 0) return; // Segurança extra
+      if (marcados.length === 0) return; 
 
-      // O .value agora contém apenas o texto da observação, sem o ano
       const textoFinal = Array.from(marcados).map(chk => chk.value).join("\n");
-      
       window.executarCopiaReal(textoFinal, btnElement);
     };
 
     window.executarCopiaReal = function(texto, btn) { 
       const textarea = document.createElement('textarea'); 
       textarea.value = texto; 
-      textarea.style.position = 'fixed'; textarea.style.left = '0'; 
-      textarea.style.top = '0'; textarea.style.opacity = '0.1'; 
+      textarea.style.position = 'fixed'; 
+      textarea.style.left = '0'; 
+      textarea.style.top = '0'; 
+      textarea.style.opacity = '0.1'; 
+      
       document.body.appendChild(textarea); 
-      textarea.focus(); textarea.select(); 
+      textarea.focus(); 
+      textarea.select(); 
       
       try { 
         const ok = document.execCommand('copy'); 
-        if(ok && btn) { 
+        if (ok && btn) { 
           const originalHTML = btn.innerHTML; 
           btn.innerHTML = '<i class="fas fa-check"></i> Copiado!'; 
           btn.classList.add('success-state'); 
@@ -1384,31 +1560,15 @@
             btn.classList.remove('success-state'); 
           }, 2000); 
         } 
-      } catch (err) { alert("Erro ao copiar."); } 
+      } catch (err) { 
+        alert("Erro ao copiar."); 
+      } 
+      
       document.body.removeChild(textarea); 
     };
   </script>
 
   <script src="https://accounts.google.com/gsi/client" async defer onload="window.onGoogleLibraryLoad()"></script>
-  
-  <!-- Modal Sessão Expirada -->
-  <div class="modal fade" id="modalRenovarSessao" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1">
-    <div class="modal-dialog modal-dialog-centered">
-      <div class="modal-content text-center p-4">
-        <div class="mb-4">
-          <i class="fas fa-hourglass-end fa-3x mb-3" style="color: #ffc107;"></i>
-          <h5 style="color: var(--text-main); font-weight: 700;">Sessão Expirada</h5>
-          <p style="color: var(--text-secondary); font-size: 0.9rem;">Por segurança, o Google encerra a sessão a cada 60 minutos. Clique abaixo para renovar o acesso sem perder seus dados na tela.</p>
-        </div>
-        <div class="d-flex justify-content-center w-100">
-           <!-- Reaproveita suas classes e lógica de botão -->
-           <div class="google-placeholder-rigid">
-               <div id="btn-google-renew-area"></div>
-           </div>
-        </div>
-      </div>
-    </div>
-  </div>
   
 </body>
 </html>
