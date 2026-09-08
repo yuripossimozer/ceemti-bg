@@ -247,7 +247,11 @@
     
     a.btn-icon:hover { 
       color: var(--on-primary-container); 
-    }    
+    }
+
+    .hover-link:hover {
+    color: var(--on-primary-container) !important;
+    }
 
     /* Badges e Tags */
     .meta-tag {
@@ -517,6 +521,7 @@
   <div class="modal fade" id="modalRenovarSessao" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1">
     <div class="modal-dialog modal-dialog-centered">
       <div class="modal-content text-center p-4">
+        
         <div class="mb-4">
           <i id="icone-renovacao" class="fas fa-hourglass-end fa-3x mb-3" style="color: #ffc107;"></i>
           <h5 id="titulo-renovacao" style="color: var(--text-main); font-weight: 700;">Sessão Expirada</h5>
@@ -524,11 +529,17 @@
             Por segurança, o Google encerra a sessão a cada 60 minutos. Clique abaixo para renovar o acesso sem perder seus dados na tela.
           </p>
         </div>
-        <div class="d-flex justify-content-center w-100">
+        
+        <div class="d-flex flex-column align-items-center w-100">
            <div class="google-placeholder-rigid">
                <div id="btn-google-renew-area"></div>
            </div>
+           
+           <a href="../index.html" onclick="window.fazerLogout()" class="mt-4 text-secondary text-decoration-none hover-link" style="font-size: 0.9rem; transition: 0.2s;">
+              <i class="fas fa-arrow-left me-1"></i> Voltar ao Início
+           </a>
         </div>
+
       </div>
     </div>
   </div>
