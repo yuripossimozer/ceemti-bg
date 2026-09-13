@@ -17,7 +17,7 @@ logging.basicConfig(stream=sys.stdout, level=logging.ERROR, format='%(levelname)
 missing_packages = []
 
 try:
-    import fitz  # PyMuPDF
+    import fitz
 except ImportError:
     missing_packages.append("PyMuPDF")
 
@@ -46,6 +46,8 @@ PYMUPDF_AVAILABLE = True
 PYPDF_AVAILABLE = True
 
 from pypdf import PdfReader, PdfWriter
+from pypdf.generic import NameObject, ArrayObject, DictionaryObject, StreamObject
+
 from rich.console import Console
 from rich.panel import Panel
 from rich.table import Table
@@ -79,7 +81,7 @@ atexit.register(cleanup_temp_files)
 # ==========================================
 
 def clean_pdf_signatures(input_path: str) -> str:
-    """Remove assinaturas do PDF e salva em um diretório temporário."""
+    """Remove assinaturas do PDF e achata o visual diretamente na página (Flattening)."""
     try:
         original_name = os.path.basename(input_path)
         temp_dir = os.path.join(tempfile.gettempdir(), 'pdf_editor_temp')
@@ -88,31 +90,120 @@ def clean_pdf_signatures(input_path: str) -> str:
         unique_id = uuid.uuid4().hex[:8]
         output_path = os.path.join(temp_dir, f"{unique_id}_{original_name}")
         
-        # FASE 1: Limpeza Visual e de Widgets com PyMuPDF
-        doc = fitz.open(input_path)
-        for page in doc:
-            widgets = page.widgets()
-            if widgets:
-                for w in widgets:
-                    ftype_str = str(getattr(w, 'field_type_string', '') or '').upper()
-                    if getattr(w, 'field_type', None) == fitz.PDF_WIDGET_TYPE_SIGNATURE or 'SIG' in ftype_str:
-                        page.delete_widget(w)
-        
-        temp_stream = io.BytesIO()
-        doc.save(temp_stream, garbage=4, deflate=True)
-        doc.close()
-        temp_stream.seek(0)
-        
-        # FASE 2: Expurgo Criptográfico com pypdf
-        reader = PdfReader(temp_stream)
+        reader = PdfReader(input_path)
         writer = PdfWriter()
+        
         for page in reader.pages:
             writer.add_page(page)
             
+        # 1. Destrói o registro global de formulários e segurança criptográfica
         for key in ["/AcroForm", "/Perms", "/SigFlags"]:
             if key in writer.root_object:
                 del writer.root_object[key]
                 
+        # 2. Varrer anotações, achatar o visual da assinatura (Flattening) e remover o widget
+        for page in writer.pages:
+            if "/Annots" in page:
+                annots = page["/Annots"].get_object()
+                if isinstance(annots, list) or isinstance(annots, ArrayObject):
+                    new_annots = ArrayObject()
+                    
+                    for annot_ref in annots:
+                        try:
+                            annot = annot_ref.get_object()
+                            if annot.get("/Subtype") == "/Widget" and annot.get("/FT") == "/Sig":
+                                ap = annot.get("/AP")
+                                if ap:
+                                    ap_obj = ap.get_object()
+                                    ap_n_ref = ap_obj.get("/N")
+                                    ap_n_obj = ap_n_ref.get_object() if ap_n_ref else None
+                                    
+                                    rect = annot.get("/Rect")
+                                    
+                                    if ap_n_obj and rect:
+                                        # Evita o erro de salvamento forçando um ponteiro indireto se não existir
+                                        if getattr(ap_n_ref, "indirect_reference", None) is None:
+                                            ap_n_ref = writer._add_object(ap_n_obj)
+                                        
+                                        # Calculando Escala e Translação exatas (BBox -> Rect)
+                                        rx0, ry0, rx1, ry1 = float(rect[0]), float(rect[1]), float(rect[2]), float(rect[3])
+                                        bbox = ap_n_obj.get("/BBox")
+                                        if bbox:
+                                            bx0, by0, bx1, by1 = float(bbox[0]), float(bbox[1]), float(bbox[2]), float(bbox[3])
+                                        else:
+                                            bx0, by0, bx1, by1 = 0.0, 0.0, rx1 - rx0, ry1 - ry0
+                                            
+                                        bw = bx1 - bx0
+                                        bh = by1 - by0
+                                        rw = rx1 - rx0
+                                        rh = ry1 - ry0
+                                        
+                                        sx = rw / bw if bw != 0 else 1.0
+                                        sy = rh / bh if bh != 0 else 1.0
+                                        tx = rx0 - (bx0 * sx)
+                                        ty = ry0 - (by0 * sy)
+                                        
+                                        # Registra a imagem nos recursos da página
+                                        resources = page.get("/Resources", DictionaryObject()).get_object()
+                                        if "/Resources" not in page:
+                                            page[NameObject("/Resources")] = resources
+                                            
+                                        xobjects = resources.get("/XObject", DictionaryObject()).get_object()
+                                        if "/XObject" not in resources:
+                                            resources[NameObject("/XObject")] = xobjects
+                                            
+                                        xobj_name = NameObject(f"/FmSig_{uuid.uuid4().hex[:6]}")
+                                        xobjects[xobj_name] = ap_n_ref
+                                        
+                                        # Cria o bloco de isolamento final com cálculo de matriz completo
+                                        content_str = f"\nQ\nq {sx} 0 0 {sy} {tx} {ty} cm {xobj_name} Do Q\n".encode("utf-8")
+                                        
+                                        contents = page.get("/Contents")
+                                        if contents:
+                                            contents_obj = contents.get_object()
+                                            
+                                            # Manipulação limpa que encapsula o stream original sem quebrar matrizes
+                                            if isinstance(contents_obj, ArrayObject):
+                                                first_stream = contents_obj[0].get_object()
+                                                last_stream = contents_obj[-1].get_object()
+                                                
+                                                if hasattr(first_stream, "get_data"):
+                                                    first_stream.set_data(b"q\n" + first_stream.get_data())
+                                                else:
+                                                    first_stream._data = b"q\n" + first_stream._data
+                                                    
+                                                if hasattr(last_stream, "get_data"):
+                                                    last_stream.set_data(last_stream.get_data() + content_str)
+                                                else:
+                                                    last_stream._data += content_str
+                                            else:
+                                                target_stream = contents_obj
+                                                if hasattr(target_stream, "get_data"):
+                                                    target_stream.set_data(b"q\n" + target_stream.get_data() + content_str)
+                                                else:
+                                                    target_stream._data = b"q\n" + target_stream._data + content_str
+                                        else:
+                                            # Trata páginas puramente em branco
+                                            new_stream = StreamObject()
+                                            content_only = f"\nq {sx} 0 0 {sy} {tx} {ty} cm {xobj_name} Do Q\n".encode("utf-8")
+                                            if hasattr(new_stream, "set_data"):
+                                                new_stream.set_data(content_only)
+                                            else:
+                                                new_stream._data = content_only
+                                            page[NameObject("/Contents")] = writer._add_object(new_stream)
+                                            
+                                # O Widget de Assinatura não é mais incluído. Restará só a imagem achatada nativamente.
+                            else:
+                                new_annots.append(annot_ref)
+                        except Exception:
+                            new_annots.append(annot_ref)
+                            
+                    if len(new_annots) > 0:
+                        page[NameObject("/Annots")] = new_annots
+                    else:
+                        if "/Annots" in page:
+                            del page["/Annots"]
+                        
         with open(output_path, "wb") as f:
             writer.write(f)
             
