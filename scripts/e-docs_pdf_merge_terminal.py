@@ -1088,7 +1088,7 @@ class TermuxPDFEditor:
     def display_header(self):
         self.clear_screen()
         CONSOLE.print(Panel(
-            "[bold cyan]EDITOR DE PDF PARA E-DOCS V1.0.4[/bold cyan]",
+            "[bold cyan]EDITOR DE PDF PARA E-DOCS | V1.0.5 | 13/09/2026[/bold cyan]",
             border_style="bold blue",
             padding=(0, 2)
         ))
@@ -1147,7 +1147,8 @@ class TermuxPDFEditor:
                 self.pages_with_edocs.clear()
                 self.pages_with_signed_mark.clear()
                 while True:
-                    self.display_header()
+                    self.clear_screen()
+                    CONSOLE.print(Panel("[bold cyan]LIMPAR TUDO[/bold cyan]", border_style="cyan"))
                     CONSOLE.print("\n[bold green][OK] Todos os documentos foram removidos com sucesso.[/bold green]")
                     CONSOLE.print("\n[bold red][Q + ENTER] Voltar[/bold red]")
                     inp = input("\nEscolha uma opção: ").strip()
@@ -1395,7 +1396,8 @@ class TermuxPDFEditor:
     def merge_and_save(self):
         if not self.pages_ordered:
             while True:
-                self.display_header()
+                self.clear_screen()
+                CONSOLE.print(Panel("[bold cyan]SALVAR PDF[/bold cyan]", border_style="cyan"))
                 CONSOLE.print("\n[bold red][ERRO] Nenhuma página carregada para salvar.[/bold red]")
                 CONSOLE.print("\n[bold red][Q + ENTER] Voltar[/bold red]")
                 inp = input("\nEscolha uma opção: ").strip()
@@ -1408,7 +1410,8 @@ class TermuxPDFEditor:
             
         status_history = []
         while True:
-            self.display_header()
+            self.clear_screen()
+            CONSOLE.print(Panel("[bold cyan]SALVAR PDF[/bold cyan]", border_style="cyan"))
             CONSOLE.print(f"📂 [bold yellow]Pasta selecionada:[/bold yellow] [dim]{chosen_dir}[/dim]", highlight=False)
             
             if status_history:
@@ -1480,7 +1483,8 @@ class TermuxPDFEditor:
                     writer.write(f)
                     
                 while True:
-                    self.display_header()
+                    self.clear_screen()
+            CONSOLE.print(Panel("[bold cyan]SALVAR PDF[/bold cyan]", border_style="cyan"))
                     CONSOLE.print(f"📂 [bold yellow]Pasta selecionada:[/bold yellow] [dim]{chosen_dir}[/dim]\n", highlight=False)
                     CONSOLE.print(f"[bold green][SUCESSO][/bold green] PDF salvo em: [cyan]{out_path}[/cyan]", highlight=False)
                     CONSOLE.print(f"-> E-DOCS reajustados: [bold white]{edocs_count}[/bold white]")
