@@ -1088,7 +1088,7 @@ class TermuxPDFEditor:
     def display_header(self):
         self.clear_screen()
         CONSOLE.print(Panel(
-            "[bold cyan]EDITOR DE PDF PARA E-DOCS V1.0.1[/bold cyan]",
+            "[bold cyan]EDITOR DE PDF PARA E-DOCS V1.0.2[/bold cyan]",
             border_style="bold blue",
             padding=(0, 2)
         ))
@@ -1270,7 +1270,13 @@ class TermuxPDFEditor:
                         if clean_stats["perms_removed"]: details.append("Permissões")
                         if clean_stats["sigflags_removed"]: details.append("SigFlags")
                         
-                        base_msg += f"\n[dim]Limpeza pré-importação: Removidos ({', '.join(details)}). Widgets achatados: {clean_stats['widgets_flattened']}[/dim]"
+                        msg_parts = []
+                        if details:
+                            msg_parts.append(f"Removidos: {', '.join(details)}")
+                        if clean_stats["widgets_flattened"] > 0:
+                            msg_parts.append(f"Widgets achatados: {clean_stats['widgets_flattened']}")
+                            
+                        base_msg += f"\n[dim]Limpeza pré-importação: {' | '.join(msg_parts)}[/dim]"
                         
                     status_history.append(base_msg)
                 except Exception as e:
