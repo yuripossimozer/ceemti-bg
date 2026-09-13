@@ -11,25 +11,41 @@ import unicodedata
 
 logging.basicConfig(stream=sys.stdout, level=logging.ERROR, format='%(levelname)s: %(message)s')
 
-# Tentativa de importação das bibliotecas do PDF
+# ==========================================
+# VERIFICAÇÃO INICIAL DE DEPENDÊNCIAS
+# ==========================================
+missing_packages = []
+
 try:
     import fitz  # PyMuPDF
-    PYMUPDF_AVAILABLE = True
 except ImportError:
-    PYMUPDF_AVAILABLE = False
-    fitz = None
-    print("\n[AVISO] Biblioteca 'PyMuPDF' (fitz) não encontrada. Instale com: pip install PyMuPDF")
+    missing_packages.append("PyMuPDF")
 
 try:
-    from pypdf import PdfReader, PdfWriter
-    PYPDF_AVAILABLE = True
-except ImportError as e:
-    PYPDF_AVAILABLE = False
-    class PdfWriter: pass
-    class PdfReader: pass
-    print(f"\n[AVISO] Biblioteca 'pypdf' não encontrada: {e}. A junção estará desabilitada.")
+    import pypdf
+except ImportError:
+    missing_packages.append("pypdf")
 
-# Importação da biblioteca de UI 'rich' (sem fallback)
+try:
+    import rich
+except ImportError:
+    missing_packages.append("rich")
+
+if missing_packages:
+    print("\n[ERRO FATAL] O script não pode ser iniciado por falta de dependências.")
+    print("Os seguintes pacotes não foram encontrados:")
+    for pkg in missing_packages:
+        print(f"  - {pkg}")
+    print(f"\nPor favor, instale as dependências executando o comando abaixo:")
+    print(f"pip install {' '.join(missing_packages)}\n")
+    sys.exit(1)
+
+# Se o código chegou até aqui, todas as bibliotecas estão disponíveis.
+# Mantemos as flags como True para não quebrar a lógica interna do restante do script.
+PYMUPDF_AVAILABLE = True
+PYPDF_AVAILABLE = True
+
+from pypdf import PdfReader, PdfWriter
 from rich.console import Console
 from rich.panel import Panel
 from rich.table import Table
