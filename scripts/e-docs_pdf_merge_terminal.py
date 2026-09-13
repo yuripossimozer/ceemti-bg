@@ -991,7 +991,7 @@ def navigate_and_choose_directory(start_dir="."):
         os.system('clear' if os.name == 'posix' else 'cls')
         
         CONSOLE.print(Panel("[bold cyan]SELECIONE A PASTA DE DESTINO[/bold cyan]", border_style="cyan"))
-        CONSOLE.print(f"📂 [bold yellow]Pasta atual:[/bold yellow] [dim]{current_dir}[/dim]\n")
+        CONSOLE.print(f"📂 [bold yellow]Pasta atual:[/bold yellow] [dim]{current_dir}[/dim]\n", highlight=False)
         
         try:
             items = sorted(os.listdir(current_dir))
@@ -1088,7 +1088,7 @@ class TermuxPDFEditor:
     def display_header(self):
         self.clear_screen()
         CONSOLE.print(Panel(
-            "[bold cyan]EDITOR DE PDF PARA E-DOCS V1.0.3[/bold cyan]",
+            "[bold cyan]EDITOR DE PDF PARA E-DOCS V1.0.4[/bold cyan]",
             border_style="bold blue",
             padding=(0, 2)
         ))
@@ -1167,7 +1167,7 @@ class TermuxPDFEditor:
         while True:
             self.clear_screen()
             CONSOLE.print(Panel("[bold cyan]ADICIONAR ARQUIVOS PDF[/bold cyan]", border_style="cyan"))
-            CONSOLE.print(f"📂 [bold yellow]Pasta atual:[/bold yellow] [dim]{current_dir}[/dim]\n")
+            CONSOLE.print(f"📂 [bold yellow]Pasta atual:[/bold yellow] [dim]{current_dir}[/dim]\n", highlight=False)
             
             try:
                 items = sorted(os.listdir(current_dir))
@@ -1258,16 +1258,16 @@ class TermuxPDFEditor:
                     
                     doc.close()
                     
-                    # Monta a mensagem de sucesso principal com as novas quebras de linha e cores
+                    # Monta o cabeçalho com o nome do arquivo
                     base_msg = (
                         f"[bold green][OK] PDF adicionado:[/bold green]\n"
-                        f"[white]{os.path.basename(selected_pdf)}[/white]\n"
-                        f"[dim]Borda E-Docs: {len(edocs_pages)} | Assinaturas residuais: {len(signed_pages)}[/dim]"
+                        f"[white]{os.path.basename(selected_pdf)}[/white]"
                     )
                     
-                    # Anexa o feedback do pré-tratamento se algo foi alterado
+                    # Trata o feedback de limpeza (fica no meio)
+                    limpeza_msg = ""
                     if clean_stats.get("error"):
-                        base_msg += f"\n[bold yellow]Aviso no pré-tratamento:[/bold yellow] {clean_stats['error']}"
+                        limpeza_msg = f"\n[bold yellow]Aviso no pré-tratamento:[/bold yellow] {clean_stats['error']}"
                     elif any([clean_stats["acroform_removed"], clean_stats["perms_removed"], clean_stats["sigflags_removed"], clean_stats["widgets_flattened"] > 0]):
                         details = []
                         if clean_stats["acroform_removed"]: details.append("AcroForm")
@@ -1280,11 +1280,13 @@ class TermuxPDFEditor:
                         if clean_stats["widgets_flattened"] > 0:
                             msg_parts.append(f"Widgets achatados: {clean_stats['widgets_flattened']}")
                             
-                        base_msg += f"\n[dim]Limpeza pré-importação: {' | '.join(msg_parts)}[/dim]"
-                        
-                    status_history.append(base_msg)
-                except Exception as e:
-                    status_history.append(f"[bold red][ERRO] Falha ao processar o arquivo: {e}[/bold red]")
+                        limpeza_msg = f"\n[dim]Limpeza pré-importação: {' | '.join(msg_parts)}[/dim]"
+                    
+                    # Trata o contador de E-DOCS e Assinaturas (fica no final)
+                    edocs_msg = f"\n[dim]Borda E-Docs: {len(edocs_pages)} | Assinaturas residuais: {len(signed_pages)}[/dim]"
+                    
+                    # Concatena tudo na ordem correta
+                    status_history.append(base_msg + limpeza_msg + edocs_msg)
 
     def list_pages(self, title="ORDENAÇÃO ATUAL DAS PÁGINAS"):
         self.clear_screen()
@@ -1404,7 +1406,7 @@ class TermuxPDFEditor:
         status_history = []
         while True:
             self.display_header()
-            CONSOLE.print(f"📂 [bold yellow]Pasta selecionada:[/bold yellow] [dim]{chosen_dir}[/dim]")
+            CONSOLE.print(f"📂 [bold yellow]Pasta selecionada:[/bold yellow] [dim]{chosen_dir}[/dim]", highlight=False)
             
             if status_history:
                 CONSOLE.print()
@@ -1476,8 +1478,8 @@ class TermuxPDFEditor:
                     
                 while True:
                     self.display_header()
-                    CONSOLE.print(f"📂 [bold yellow]Pasta selecionada:[/bold yellow] [dim]{chosen_dir}[/dim]\n")
-                    CONSOLE.print(f"[bold green][SUCESSO][/bold green] PDF salvo em: [cyan]{out_path}[/cyan]")
+                    CONSOLE.print(f"📂 [bold yellow]Pasta selecionada:[/bold yellow] [dim]{chosen_dir}[/dim]\n", highlight=False)
+                    CONSOLE.print(f"[bold green][SUCESSO][/bold green] PDF salvo em: [cyan]{out_path}[/cyan]", highlight=False)
                     CONSOLE.print(f"-> E-DOCS reajustados: [bold white]{edocs_count}[/bold white]")
                     CONSOLE.print(f"-> Assinaturas rasterizadas: [bold white]{signed_count}[/bold white]")
                     CONSOLE.print("\n[bold red][Q + ENTER] Voltar[/bold red]")
