@@ -1088,7 +1088,7 @@ class TermuxPDFEditor:
     def display_header(self):
         self.clear_screen()
         CONSOLE.print(Panel(
-            "[bold cyan]EDITOR DE PDF PARA E-DOCS V1.0.2[/bold cyan]",
+            "[bold cyan]EDITOR DE PDF PARA E-DOCS V1.0.3[/bold cyan]",
             border_style="bold blue",
             padding=(0, 2)
         ))
@@ -1258,8 +1258,12 @@ class TermuxPDFEditor:
                     
                     doc.close()
                     
-                    # Monta a mensagem de sucesso principal
-                    base_msg = f"[bold green][OK] PDF adicionado: {os.path.basename(selected_pdf)}. E-DOCS: {len(edocs_pages)} | Assinaturas: {len(signed_pages)}[/bold green]"
+                    # Monta a mensagem de sucesso principal com as novas quebras de linha e cores
+                    base_msg = (
+                        f"[bold green][OK] PDF adicionado:[/bold green]\n"
+                        f"[white]{os.path.basename(selected_pdf)}[/white]\n"
+                        f"[dim]Borda E-Docs: {len(edocs_pages)} | Assinaturas residuais: {len(signed_pages)}[/dim]"
+                    )
                     
                     # Anexa o feedback do pré-tratamento se algo foi alterado
                     if clean_stats.get("error"):
