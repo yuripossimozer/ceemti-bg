@@ -1288,6 +1288,9 @@ class TermuxPDFEditor:
                     # Concatena tudo na ordem correta
                     status_history.append(base_msg + limpeza_msg + edocs_msg)
 
+                except Exception as e:
+                    status_history.append(f"[bold red][ERRO] Falha ao processar o arquivo: {e}[/bold red]")
+
     def list_pages(self, title="ORDENAÇÃO ATUAL DAS PÁGINAS"):
         self.clear_screen()
         CONSOLE.print(Panel(f"[bold cyan]{title}[/bold cyan]", border_style="cyan"))
