@@ -80,8 +80,15 @@ atexit.register(cleanup_temp_files)
 # FUNÇÕES CORE DE PDF (SINCRONIZADAS COM A VERSÃO GRÁFICA)
 # ==========================================
 
-def clean_pdf_signatures(input_path: str) -> str:
-    """Remove assinaturas do PDF e achata o visual diretamente na página (Flattening)."""
+def clean_pdf_signatures(input_path: str) -> tuple[str, dict]:
+    """Remove assinaturas do PDF e achata o visual, retornando o caminho e os status de limpeza."""
+    stats = {
+        "acroform_removed": False,
+        "perms_removed": False,
+        "sigflags_removed": False,
+        "widgets_flattened": 0,
+        "error": None
+    }
     try:
         original_name = os.path.basename(input_path)
         temp_dir = os.path.join(tempfile.gettempdir(), 'pdf_editor_temp')
@@ -100,6 +107,9 @@ def clean_pdf_signatures(input_path: str) -> str:
         for key in ["/AcroForm", "/Perms", "/SigFlags"]:
             if key in writer.root_object:
                 del writer.root_object[key]
+                if key == "/AcroForm": stats["acroform_removed"] = True
+                if key == "/Perms": stats["perms_removed"] = True
+                if key == "/SigFlags": stats["sigflags_removed"] = True
                 
         # 2. Varrer anotações, achatar o visual da assinatura (Flattening) e remover o widget
         for page in writer.pages:
@@ -112,6 +122,7 @@ def clean_pdf_signatures(input_path: str) -> str:
                         try:
                             annot = annot_ref.get_object()
                             if annot.get("/Subtype") == "/Widget" and annot.get("/FT") == "/Sig":
+                                stats["widgets_flattened"] += 1
                                 ap = annot.get("/AP")
                                 if ap:
                                     ap_obj = ap.get_object()
@@ -207,10 +218,11 @@ def clean_pdf_signatures(input_path: str) -> str:
         with open(output_path, "wb") as f:
             writer.write(f)
             
-        return output_path
+        return output_path, stats
     except Exception as e:
         logging.error(f"Erro na limpeza de assinatura do arquivo {input_path}: {e}")
-        return input_path
+        stats["error"] = str(e)
+        return input_path, stats
 
 def get_display_name(filepath: str) -> str:
     """Remove o prefixo UUID (se existir) para exibir o nome original na interface."""
@@ -1232,7 +1244,7 @@ class TermuxPDFEditor:
                 CONSOLE.print(f"\n[cyan]Processando arquivo:[/cyan] {os.path.basename(selected_pdf)} ...")
                     
                 try:
-                    pdf_path = clean_pdf_signatures(selected_pdf)
+                    pdf_path, clean_stats = clean_pdf_signatures(selected_pdf)
                     doc = fitz.open(pdf_path)
                     edocs_pages = detect_edocs_pages_in_pdf(pdf_path)
                     signed_pages = detect_signed_pages_in_pdf(pdf_path)
@@ -1245,7 +1257,22 @@ class TermuxPDFEditor:
                             self.pages_with_signed_mark.add((pdf_path, pno))
                     
                     doc.close()
-                    status_history.append(f"[bold green][OK] PDF adicionado: {os.path.basename(selected_pdf)}. E-DOCS: {len(edocs_pages)} | Assinaturas: {len(signed_pages)}[/bold green]")
+                    
+                    # Monta a mensagem de sucesso principal
+                    base_msg = f"[bold green][OK] PDF adicionado: {os.path.basename(selected_pdf)}. E-DOCS: {len(edocs_pages)} | Assinaturas: {len(signed_pages)}[/bold green]"
+                    
+                    # Anexa o feedback do pré-tratamento se algo foi alterado
+                    if clean_stats.get("error"):
+                        base_msg += f"\n[bold yellow]Aviso no pré-tratamento:[/bold yellow] {clean_stats['error']}"
+                    elif any([clean_stats["acroform_removed"], clean_stats["perms_removed"], clean_stats["sigflags_removed"], clean_stats["widgets_flattened"] > 0]):
+                        details = []
+                        if clean_stats["acroform_removed"]: details.append("AcroForm")
+                        if clean_stats["perms_removed"]: details.append("Permissões")
+                        if clean_stats["sigflags_removed"]: details.append("SigFlags")
+                        
+                        base_msg += f"\n[dim]Limpeza pré-importação: Removidos ({', '.join(details)}). Widgets achatados: {clean_stats['widgets_flattened']}[/dim]"
+                        
+                    status_history.append(base_msg)
                 except Exception as e:
                     status_history.append(f"[bold red][ERRO] Falha ao processar o arquivo: {e}[/bold red]")
 
