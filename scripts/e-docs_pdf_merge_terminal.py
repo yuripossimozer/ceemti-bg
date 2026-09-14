@@ -1129,7 +1129,7 @@ class TermuxPDFEditor:
     def display_header(self):
         self.clear_screen()
         CONSOLE.print(Panel(
-            "[bold cyan]EDITOR DE PDF PARA E-DOCS | V1.0.9 | 14/09/2026[/bold cyan]",
+            "[bold cyan]EDITOR DE PDF PARA E-DOCS | V1.0.10 | 14/09/2026[/bold cyan]",
             border_style="bold blue",
             padding=(0, 2)
         ))
@@ -1147,7 +1147,7 @@ class TermuxPDFEditor:
         table.add_row("[2]", "📑 Ordenação Atual das Páginas")
         table.add_row("[3]", "🔀 Reordenar Páginas")
         table.add_row("[4]", "❌ Remover Páginas")
-        table.add_row("[5]", "🧹 Limpar Tudo")
+        table.add_row("[5]", "🗑️ Limpar Tudo")
         table.add_row("[6]", "💾 Salvar PDF")
         table.add_row("[7]", "🐛 Depuração")
         
@@ -1181,6 +1181,7 @@ class TermuxPDFEditor:
             elif choice == '4':
                 self.remove_page()
             elif choice == '5':
+                logging.info(f"🗑️ LIMPAR TUDO: Usuário esvaziou a fila (Total removido: {len(self.pages_ordered)}).")
                 self.pages_ordered.clear()
                 self.pages_with_edocs.clear()
                 self.pages_with_signed_mark.clear()
@@ -1282,6 +1283,12 @@ class TermuxPDFEditor:
                     continue
 
             if selected_pdf:
+                try:
+                    tamanho_mb = os.path.getsize(selected_pdf) / (1024 * 1024)
+                    logging.info(f"📥 CARREGANDO PDF: '{os.path.basename(selected_pdf)}' | Tamanho: {tamanho_mb:.2f} MB | Caminho: {selected_pdf}")
+                except Exception as e:
+                    logging.warning(f"⚠️ Aviso: Falha ao tentar obter tamanho de '{selected_pdf}': {e}")
+
                 with CONSOLE.status(f"[cyan]Processando arquivo:[/cyan] {os.path.basename(selected_pdf)}", spinner="line"):
                     
                     try:
@@ -1289,8 +1296,10 @@ class TermuxPDFEditor:
                         doc = fitz.open(pdf_path)
                         edocs_pages = detect_edocs_pages_in_pdf(pdf_path)
                         signed_pages = detect_signed_pages_in_pdf(pdf_path)
-                    
-                        for pno in range(doc.page_count):
+                        
+                        total_paginas = doc.page_count
+                        
+                        for pno in range(total_paginas):
                             self.pages_ordered.append((pdf_path, pno))
                             if pno in edocs_pages:
                                 self.pages_with_edocs.add((pdf_path, pno))
@@ -1298,8 +1307,21 @@ class TermuxPDFEditor:
                                 self.pages_with_signed_mark.add((pdf_path, pno))
                     
                         doc.close()
-                    
-                        # Monta o cabeçalho com o nome do arquivo
+                        
+                        logging.info(f"✅ PROCESSAMENTO CONCLUÍDO: '{os.path.basename(selected_pdf)}' | Páginas lidas: {total_paginas} | Bordas E-Docs identificadas: {len(edocs_pages)} | Assinaturas restantes identificadas: {len(signed_pages)}")
+                        
+                        if clean_stats.get("error"):
+                            logging.error(f"❌ Erro na limpeza prévia do arquivo: {clean_stats['error']}")
+                        else:
+                            acoes_limpeza = []
+                            if clean_stats.get("acroform_removed"): acoes_limpeza.append("AcroForm removido")
+                            if clean_stats.get("perms_removed"): acoes_limpeza.append("Permissões removidas")
+                            if clean_stats.get("sigflags_removed"): acoes_limpeza.append("SigFlags removidos")
+                            if clean_stats.get("widgets_flattened", 0) > 0: acoes_limpeza.append(f"{clean_stats['widgets_flattened']} widget(s) achatado(s)")
+                            
+                            if acoes_limpeza:
+                                logging.info(f"🧹 PRÉ-PROCESSAMENTO APLICADO: {' | '.join(acoes_limpeza)}")
+
                         base_msg = (
                             f"[bold green][OK] PDF adicionado:[/bold green]\n"
                             f"[white]{os.path.basename(selected_pdf)}[/white]"
@@ -1398,6 +1420,7 @@ class TermuxPDFEditor:
                 if dst > len(remaining): dst = len(remaining)
                 
                 self.pages_ordered = remaining[:dst] + items_to_move + remaining[dst:]
+                logging.info(f"🔀 REORDENAR PÁGINAS: Usuário moveu {len(items_to_move)} página(s) da(s) origem(ns) {src_indices} para o destino {dst}.")
                 status_history = [f"[bold green][OK][/bold green] {len(items_to_move)} página(s) movida(s) para a posição [{dst}]."]
             except ValueError:
                 status_history = ["[bold red][ERRO][/bold red] Posição de destino inválida."]
@@ -1430,9 +1453,9 @@ class TermuxPDFEditor:
                     path, pno = self.pages_ordered.pop(idx)
                     self.pages_with_edocs.discard((path, pno))
                     self.pages_with_signed_mark.discard((path, pno))
-                    
+                logging.info(f"❌ REMOVER PÁGINAS: Usuário removeu {len(indices)} página(s). Índices alvo: {indices}")
                 status_history = [f"[bold green][OK][/bold green] {len(indices)} página(s) removida(s) com sucesso."]
-
+                
     def merge_and_save(self):
         if not self.pages_ordered:
             while True:
@@ -1482,6 +1505,7 @@ class TermuxPDFEditor:
                 alive_buffers = []
                 
                 try:
+                    logging.info(f"🔄 EXPORTAÇÃO INICIADA: Preparando {len(self.pages_ordered)} página(s) para o arquivo '{filename}'.")
                     for file_path, pno in self.pages_ordered:
                         key = (file_path, pno)
                         if PYMUPDF_AVAILABLE and key in self.pages_with_signed_mark:
@@ -1520,14 +1544,21 @@ class TermuxPDFEditor:
                         '/Title': ''
                     })
                     writer._ID = None
-                
+
+                    logging.info("⏳ Processamento das páginas concluído. Montando o PDF final na memória (RAM)...")
+                    
                     final_pdf_buffer = io.BytesIO()
                     writer.write(final_pdf_buffer)
+
+                    tamanho_final_mb = final_pdf_buffer.getbuffer().nbytes / (1024 * 1024)
+                    logging.info(f"💾 GRAVANDO NO DISCO: Escrevendo {tamanho_final_mb:.2f} MB no arquivo '{out_path}'.")
                     
                     with open(out_path, 'wb') as f:
                         f.write(final_pdf_buffer.getvalue())
-                        
+                        logging.info(f"✅ EXPORTAÇÃO CONCLUÍDA: Bordas E-Docs ajustadas: {edocs_count} | Assinaturas rasterizadas: {signed_count}")
+                
                 except Exception as e:
+                    logging.error(f"❌ ERRO FATAL NA EXPORTAÇÃO: Falha ao salvar '{filename}': {e}", exc_info=True)
                     status_history = [f"[bold red][ERRO][/bold red] Falha ao salvar: {e}"]
                     continue
                 finally:
