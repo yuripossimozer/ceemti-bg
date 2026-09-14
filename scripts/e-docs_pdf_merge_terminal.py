@@ -84,22 +84,35 @@ TEMP_BASE_DIR = os.path.join(tempfile.gettempdir(), 'pdf_editor_edocs_temp')
 SESSION_TEMP_DIR = os.path.join(TEMP_BASE_DIR, f"session_{SESSION_ID}")
 
 def cleanup_old_temp_files():
+    """Varre e deleta pastas de sessões antigas abandonadas (prevenção contra SIGKILL)."""
     if os.path.exists(TEMP_BASE_DIR):
         for d in os.listdir(TEMP_BASE_DIR):
             path = os.path.join(TEMP_BASE_DIR, d)
             if os.path.isdir(path) and d != f"session_{SESSION_ID}":
                 try:
+                    arquivos = os.listdir(path)
+                    qtd = len(arquivos)
+                    nomes = ", ".join(arquivos) if arquivos else "Nenhum arquivo"
+                    
                     shutil.rmtree(path)
-                    logging.debug(f"Pasta órfã removida: {d}")
-                except Exception:
-                    pass
+                    logging.info(f"🧹 LIMPEZA INICIAL: Pasta órfã removida '{path}'. Continha {qtd} arquivo(s): [{nomes}]")
+                except Exception as e:
+                    logging.error(f"❌ Erro ao limpar pasta órfã '{path}': {e}")
 
 def cleanup_current_session():
+    """Remove a pasta da sessão atual ao encerrar graciosamente e registra o fim da sessão."""
     if os.path.exists(SESSION_TEMP_DIR):
         try:
+            arquivos = os.listdir(SESSION_TEMP_DIR)
+            qtd = len(arquivos)
+            nomes = ", ".join(arquivos) if arquivos else "Nenhum arquivo"
+            
             shutil.rmtree(SESSION_TEMP_DIR)
+            logging.info(f"🛑 SESSÃO ENCERRADA (Normal): Pasta temporária excluída. Continha {qtd} arquivo(s): [{nomes}]")
         except Exception as e:
-            logging.error(f"Erro ao apagar temporários da sessão: {e}")
+            logging.error(f"❌ Erro no encerramento ao apagar temporários da sessão: {e}")
+    else:
+        logging.info("🛑 SESSÃO ENCERRADA (Normal): Nenhum diretório temporário precisou ser limpo.")
 
 cleanup_old_temp_files()
 atexit.register(cleanup_current_session)
@@ -1129,7 +1142,7 @@ class TermuxPDFEditor:
     def display_header(self):
         self.clear_screen()
         CONSOLE.print(Panel(
-            "[bold cyan]EDITOR DE PDF PARA E-DOCS | V1.0.10 | 14/09/2026[/bold cyan]",
+            "[bold cyan]EDITOR DE PDF PARA E-DOCS | V1.0.11 | 14/09/2026[/bold cyan]",
             border_style="bold blue",
             padding=(0, 2)
         ))
@@ -1147,7 +1160,7 @@ class TermuxPDFEditor:
         table.add_row("[2]", "📑 Ordenação Atual das Páginas")
         table.add_row("[3]", "🔀 Reordenar Páginas")
         table.add_row("[4]", "❌ Remover Páginas")
-        table.add_row("[5]", "🗑️ Limpar Tudo")
+        table.add_row("[5]", "🧹 Limpar Tudo")
         table.add_row("[6]", "💾 Salvar PDF")
         table.add_row("[7]", "🐛 Depuração")
         
