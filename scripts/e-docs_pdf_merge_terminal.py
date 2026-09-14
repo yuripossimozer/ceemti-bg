@@ -14,6 +14,7 @@ import time
 # CONFIGURAÇÃO DE DIAGNÓSTICO (LOGS)
 # ==========================================
 SESSION_ID = uuid.uuid4().hex[:8].upper()
+VERSION = 1.0.14
 
 LOG_BASE_DIR = os.path.join(tempfile.gettempdir(), 'pdf_editor_edocs_logs')
 os.makedirs(LOG_BASE_DIR, exist_ok=True)
@@ -1145,7 +1146,7 @@ class TermuxPDFEditor:
     def display_header(self):
         self.clear_screen()
         CONSOLE.print(Panel(
-            "[bold cyan]EDITOR DE PDF PARA E-DOCS | V1.0.13 | 14/09/2026[/bold cyan]",
+            "[bold cyan]EDITOR DE PDF PARA E-DOCS | {VERSION} | 14/09/2026[/bold cyan]",
             border_style="bold blue",
             padding=(0, 2)
         ))
