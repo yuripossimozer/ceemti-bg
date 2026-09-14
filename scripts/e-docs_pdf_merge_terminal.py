@@ -62,19 +62,30 @@ EDOCS_STAMP_OMIT_EDOCS_WORD = False
 # ==========================================
 # ROTINA DE LIMPEZA DE ARQUIVOS TEMPORÁRIOS
 # ==========================================
+SESSION_ID = uuid.uuid4().hex[:8]
+TEMP_BASE_DIR = os.path.join(tempfile.gettempdir(), 'pdf_editor_edocs_temp')
+SESSION_TEMP_DIR = os.path.join(TEMP_BASE_DIR, f"session_{SESSION_ID}")
 
-def cleanup_temp_files():
-    """Remove a pasta de arquivos temporários e todos os PDFs residuais ao encerrar o programa."""
-    temp_dir = os.path.join(tempfile.gettempdir(), 'pdf_editor_temp')
-    if os.path.exists(temp_dir):
+def cleanup_old_temp_files():
+    if os.path.exists(TEMP_BASE_DIR):
+        for d in os.listdir(TEMP_BASE_DIR):
+            path = os.path.join(TEMP_BASE_DIR, d)
+            if os.path.isdir(path) and d != f"session_{SESSION_ID}":
+                try:
+                    shutil.rmtree(path)
+                    logging.debug(f"Pasta órfã removida: {d}")
+                except Exception:
+                    pass
+
+def cleanup_current_session():
+    if os.path.exists(SESSION_TEMP_DIR):
         try:
-            shutil.rmtree(temp_dir)
-            logging.debug("Arquivos temporários apagados com sucesso.")
+            shutil.rmtree(SESSION_TEMP_DIR)
         except Exception as e:
-            logging.error(f"Erro ao apagar a pasta de arquivos temporários: {e}")
+            logging.error(f"Erro ao apagar temporários da sessão: {e}")
 
-# Garante que a rotina seja executada quando o script for finalizado
-atexit.register(cleanup_temp_files)
+cleanup_old_temp_files()
+atexit.register(cleanup_current_session)
 
 # ==========================================
 # FUNÇÕES CORE DE PDF (SINCRONIZADAS COM A VERSÃO GRÁFICA)
@@ -91,11 +102,10 @@ def clean_pdf_signatures(input_path: str) -> tuple[str, dict]:
     }
     try:
         original_name = os.path.basename(input_path)
-        temp_dir = os.path.join(tempfile.gettempdir(), 'pdf_editor_temp')
-        os.makedirs(temp_dir, exist_ok=True)
+        os.makedirs(SESSION_TEMP_DIR, exist_ok=True)
         
         unique_id = uuid.uuid4().hex[:8]
-        output_path = os.path.join(temp_dir, f"{unique_id}_{original_name}")
+        output_path = os.path.join(SESSION_TEMP_DIR, f"{unique_id}_{original_name}")
         
         reader = PdfReader(input_path)
         writer = PdfWriter()
@@ -1113,10 +1123,6 @@ class TermuxPDFEditor:
         CONSOLE.print("\n[bold red][Q + ENTER] Sair do sistema[/bold red]")
 
     def run(self):
-        if not PYMUPDF_AVAILABLE or not PYPDF_AVAILABLE:
-            print("\n[AVISO] Bibliotecas essenciais ausentes. O script pode falhar.")
-            input("Pressione ENTER para continuar mesmo assim...")
-
         while True:
             self.display_header()
             CONSOLE.print(f"Páginas na fila: [bold green]{len(self.pages_ordered)}[/bold green]\n")
@@ -1434,11 +1440,12 @@ class TermuxPDFEditor:
                 
             out_path = os.path.join(chosen_dir, filename)
                 
-            # Substituímos o print pelo status, englobando a criação e o try/except
-            with CONSOLE.status(f"[cyan]Processando documento e gerando:[/cyan] {filename}", spinner="line"):
+            with CONSOLE.status(f"[cyan]Processando e gerando documento:[/cyan] {filename}", spinner="line"):
                 writer = PdfWriter()
                 edocs_count = 0
                 signed_count = 0
+                
+                alive_buffers = []
                 
                 try:
                     for file_path, pno in self.pages_ordered:
@@ -1447,15 +1454,17 @@ class TermuxPDFEditor:
                             src = fitz.open(file_path)
                             page0 = src.load_page(pno)
                             image_only_pdf = build_single_page_image_pdf_bytes(page0, dpi=300)
-                            writer.append(io.BytesIO(image_only_pdf))
+                            
+                            buf = io.BytesIO(image_only_pdf)
+                            alive_buffers.append(buf)
+                            writer.append(buf)
+                            
                             signed_count += 1
                             src.close()
                         elif PYMUPDF_AVAILABLE and key in self.pages_with_edocs:
                             src = fitz.open(file_path)
                             single = fitz.open()
                             single.insert_pdf(src, from_page=pno, to_page=pno)
-                        
-                            # Limpa metadados internos da página
                             single.del_xml_metadata()
                         
                             if shift_edocs_stamp_left_in_page(single[0], dx_pts=EDOCS_SHIFT_LEFT_PTS):
@@ -1464,7 +1473,9 @@ class TermuxPDFEditor:
                             buf = io.BytesIO()
                             single.save(buf, garbage=4, deflate=True, clean=True, expand=255, pretty=False, no_new_id=True)
                             buf.seek(0)
+                            alive_buffers.append(buf)
                             writer.append(buf)
+                            
                             single.close()
                             src.close()
                         else:
@@ -1476,15 +1487,19 @@ class TermuxPDFEditor:
                         '/Author': '',
                         '/Title': ''
                     })
-                    # Remove qualquer vestígio de histórico de IDs para conformidade com a versão gráfica
                     writer._ID = None
                 
+                    final_pdf_buffer = io.BytesIO()
+                    writer.write(final_pdf_buffer)
+                    
                     with open(out_path, 'wb') as f:
-                        writer.write(f)
+                        f.write(final_pdf_buffer.getvalue())
                         
                 except Exception as e:
                     status_history = [f"[bold red][ERRO][/bold red] Falha ao salvar: {e}"]
                     continue
+                finally:
+                    alive_buffers.clear()
                     
             while True:
                 self.clear_screen()
