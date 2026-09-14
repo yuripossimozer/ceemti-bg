@@ -4,7 +4,6 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <meta name="theme-color" content="#fdfcff" id="meta-theme-color">
-  <link rel="manifest" href="../pwa/manifest.json">
   <link rel="apple-touch-icon" href="../icon.png">  
   <link rel="icon" type="image/png" href="../icon.png">
   
@@ -363,12 +362,6 @@
             if(icon) icon.classList.replace('fa-moon', 'fa-sun');
         }
         carregarScripts();
-
-      // Registro do Service Worker
-      if ('serviceWorker' in navigator) {
-          navigator.serviceWorker.register('../pwa/sw.js')
-            .catch(err => console.log('Falha no SW:', err));
-      }
     };    
   </script>
 </body>
