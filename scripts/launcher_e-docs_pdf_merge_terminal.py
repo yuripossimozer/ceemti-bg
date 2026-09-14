@@ -4,8 +4,8 @@ import time
 import threading
 import traceback
 
-URL = "https://raw.githubusercontent.com/yuripossimozer/ceemti-bg/refs/heads/main/scripts/e-docs_pdf_merge_terminal.py"
-nome_arquivo = URL.split('/')[-1]
+URL_SCRIPT = "https://raw.githubusercontent.com/yuripossimozer/ceemti-bg/refs/heads/main/scripts/e-docs_pdf_merge_terminal.py"
+nome_arquivo = URL_SCRIPT.split('/')[-1]
 baixando = True
 
 def animacao_spinner():
@@ -22,7 +22,7 @@ if __name__ == "__main__":
     t.start()
     
     try:
-        resposta = urllib.request.urlopen(URL, timeout=15)
+        resposta = urllib.request.urlopen(URL_SCRIPT, timeout=15)
         codigo = resposta.read().decode('utf-8')
         
         baixando = False
