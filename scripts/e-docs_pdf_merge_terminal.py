@@ -1244,53 +1244,53 @@ class TermuxPDFEditor:
             if selected_pdf:
                 with CONSOLE.status(f"[cyan]Processando arquivo:[/cyan] {os.path.basename(selected_pdf)}", spinner="line"):
                     
-                try:
-                    pdf_path, clean_stats = clean_pdf_signatures(selected_pdf)
-                    doc = fitz.open(pdf_path)
-                    edocs_pages = detect_edocs_pages_in_pdf(pdf_path)
-                    signed_pages = detect_signed_pages_in_pdf(pdf_path)
+                    try:
+                        pdf_path, clean_stats = clean_pdf_signatures(selected_pdf)
+                        doc = fitz.open(pdf_path)
+                        edocs_pages = detect_edocs_pages_in_pdf(pdf_path)
+                        signed_pages = detect_signed_pages_in_pdf(pdf_path)
                     
-                    for pno in range(doc.page_count):
-                        self.pages_ordered.append((pdf_path, pno))
-                        if pno in edocs_pages:
-                            self.pages_with_edocs.add((pdf_path, pno))
-                        if pno in signed_pages:
-                            self.pages_with_signed_mark.add((pdf_path, pno))
+                        for pno in range(doc.page_count):
+                            self.pages_ordered.append((pdf_path, pno))
+                            if pno in edocs_pages:
+                                self.pages_with_edocs.add((pdf_path, pno))
+                            if pno in signed_pages:
+                                self.pages_with_signed_mark.add((pdf_path, pno))
                     
-                    doc.close()
+                        doc.close()
                     
-                    # Monta o cabeçalho com o nome do arquivo
-                    base_msg = (
-                        f"[bold green][OK] PDF adicionado:[/bold green]\n"
-                        f"[white]{os.path.basename(selected_pdf)}[/white]"
-                    )
+                        # Monta o cabeçalho com o nome do arquivo
+                        base_msg = (
+                            f"[bold green][OK] PDF adicionado:[/bold green]\n"
+                            f"[white]{os.path.basename(selected_pdf)}[/white]"
+                        )
                     
-                    # Trata o feedback de limpeza (fica no meio)
-                    limpeza_msg = ""
-                    if clean_stats.get("error"):
-                        limpeza_msg = f"\n[bold yellow]Aviso no pré-tratamento:[/bold yellow] {clean_stats['error']}"
-                    elif any([clean_stats["acroform_removed"], clean_stats["perms_removed"], clean_stats["sigflags_removed"], clean_stats["widgets_flattened"] > 0]):
-                        details = []
-                        if clean_stats["acroform_removed"]: details.append("AcroForm")
-                        if clean_stats["perms_removed"]: details.append("Permissões")
-                        if clean_stats["sigflags_removed"]: details.append("SigFlags")
+                        # Trata o feedback de limpeza (fica no meio)
+                        limpeza_msg = ""
+                        if clean_stats.get("error"):
+                            limpeza_msg = f"\n[bold yellow]Aviso no pré-tratamento:[/bold yellow] {clean_stats['error']}"
+                        elif any([clean_stats["acroform_removed"], clean_stats["perms_removed"], clean_stats["sigflags_removed"], clean_stats["widgets_flattened"] > 0]):
+                            details = []
+                            if clean_stats["acroform_removed"]: details.append("AcroForm")
+                            if clean_stats["perms_removed"]: details.append("Permissões")
+                            if clean_stats["sigflags_removed"]: details.append("SigFlags")
                         
-                        msg_parts = []
-                        if details:
-                            msg_parts.append(f"Removidos: {', '.join(details)}")
-                        if clean_stats["widgets_flattened"] > 0:
-                            msg_parts.append(f"Widgets achatados: {clean_stats['widgets_flattened']}")
+                            msg_parts = []
+                            if details:
+                                msg_parts.append(f"Removidos: {', '.join(details)}")
+                            if clean_stats["widgets_flattened"] > 0:
+                                msg_parts.append(f"Widgets achatados: {clean_stats['widgets_flattened']}")
                             
-                        limpeza_msg = f"\n[dim]Limpeza pré-importação: {' | '.join(msg_parts)}[/dim]"
+                            limpeza_msg = f"\n[dim]Limpeza pré-importação: {' | '.join(msg_parts)}[/dim]"
                     
-                    # Trata o contador de E-DOCS e Assinaturas (fica no final)
-                    edocs_msg = f"\n[dim]Borda E-Docs: {len(edocs_pages)} | Assinaturas residuais: {len(signed_pages)}[/dim]"
+                        # Trata o contador de E-DOCS e Assinaturas (fica no final)
+                        edocs_msg = f"\n[dim]Borda E-Docs: {len(edocs_pages)} | Assinaturas residuais: {len(signed_pages)}[/dim]"
                     
-                    # Concatena tudo na ordem correta
-                    status_history.append(base_msg + limpeza_msg + edocs_msg)
+                        # Concatena tudo na ordem correta
+                        status_history.append(base_msg + limpeza_msg + edocs_msg)
 
-                except Exception as e:
-                    status_history.append(f"[bold red][ERRO] Falha ao processar o arquivo: {e}[/bold red]")
+                    except Exception as e:
+                        status_history.append(f"[bold red][ERRO] Falha ao processar o arquivo: {e}[/bold red]")
 
     def list_pages(self, title="ORDENAÇÃO ATUAL DAS PÁGINAS"):
         self.clear_screen()
