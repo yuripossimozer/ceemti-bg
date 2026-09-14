@@ -1482,19 +1482,19 @@ class TermuxPDFEditor:
                     with open(out_path, 'wb') as f:
                         writer.write(f)
                     
-                    while True:
-                        self.clear_screen()
-                        CONSOLE.print(Panel("[bold cyan]SALVAR E EXPORTAR PDF[/bold cyan]", border_style="cyan"))
-                        CONSOLE.print(f"📂 [bold yellow]Pasta selecionada:[/bold yellow] [dim]{chosen_dir}[/dim]\n", highlight=False)
-                        CONSOLE.print(f"[bold green][SUCESSO][/bold green] PDF salvo em: [cyan]{out_path}[/cyan]", highlight=False)
-                        CONSOLE.print(f"-> E-DOCS reajustados: [bold white]{edocs_count}[/bold white]")
-                        CONSOLE.print(f"-> Assinaturas rasterizadas: [bold white]{signed_count}[/bold white]")
-                        CONSOLE.print("\n[bold red][Q + ENTER] Voltar[/bold red]")
+            while True:
+                self.clear_screen()
+                CONSOLE.print(Panel("[bold cyan]SALVAR E EXPORTAR PDF[/bold cyan]", border_style="cyan"))
+                CONSOLE.print(f"📂 [bold yellow]Pasta selecionada:[/bold yellow] [dim]{chosen_dir}[/dim]\n", highlight=False)
+                CONSOLE.print(f"[bold green][SUCESSO][/bold green] PDF salvo em: [cyan]{out_path}[/cyan]", highlight=False)
+                CONSOLE.print(f"-> E-DOCS reajustados: [bold white]{edocs_count}[/bold white]")
+                CONSOLE.print(f"-> Assinaturas rasterizadas: [bold white]{signed_count}[/bold white]")
+                CONSOLE.print("\n[bold red][Q + ENTER] Voltar[/bold red]")
                     
-                        inp = input("\nEscolha uma opção: ").strip()
+                inp = input("\nEscolha uma opção: ").strip()
                         
-                        if inp == '\x1b' or inp.lower() == 'q':
-                            return
+                if inp == '\x1b' or inp.lower() == 'q':
+                    return
 
                 except Exception as e:
                     status_history = [f"[bold red][ERRO][/bold red] Falha ao salvar: {e}"]
