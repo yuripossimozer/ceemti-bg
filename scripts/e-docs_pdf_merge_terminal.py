@@ -23,7 +23,7 @@ logging.basicConfig(
     filename=LOG_FILE,
     filemode='a',
     level=logging.DEBUG, 
-    format='%(asctime)s | %(levelname)s | %(funcName)s | %(message)s',
+    format='%(asctime)s.%(msecs)03d | %(levelname)s | %(funcName)s | %(message)s',
     datefmt='%Y-%m-%d %H:%M:%S'
 )
 
@@ -1142,7 +1142,7 @@ class TermuxPDFEditor:
     def display_header(self):
         self.clear_screen()
         CONSOLE.print(Panel(
-            "[bold cyan]EDITOR DE PDF PARA E-DOCS | V1.0.11 | 14/09/2026[/bold cyan]",
+            "[bold cyan]EDITOR DE PDF PARA E-DOCS | V1.0.12 | 14/09/2026[/bold cyan]",
             border_style="bold blue",
             padding=(0, 2)
         ))
@@ -1320,9 +1320,7 @@ class TermuxPDFEditor:
                                 self.pages_with_signed_mark.add((pdf_path, pno))
                     
                         doc.close()
-                        
-                        logging.info(f"✅ PROCESSAMENTO CONCLUÍDO: '{os.path.basename(selected_pdf)}' | Páginas lidas: {total_paginas} | Bordas E-Docs identificadas: {len(edocs_pages)} | Assinaturas restantes identificadas: {len(signed_pages)}")
-                        
+
                         if clean_stats.get("error"):
                             logging.error(f"❌ Erro na limpeza prévia do arquivo: {clean_stats['error']}")
                         else:
@@ -1334,13 +1332,14 @@ class TermuxPDFEditor:
                             
                             if acoes_limpeza:
                                 logging.info(f"🧹 PRÉ-PROCESSAMENTO APLICADO: {' | '.join(acoes_limpeza)}")
-
+                                
+                        logging.info(f"✅ PROCESSAMENTO CONCLUÍDO: '{os.path.basename(selected_pdf)}' | Páginas lidas: {total_paginas} | Bordas E-Docs identificadas: {len(edocs_pages)} | Assinaturas restantes identificadas: {len(signed_pages)}")
+                        
                         base_msg = (
                             f"[bold green][OK] PDF adicionado:[/bold green]\n"
                             f"[white]{os.path.basename(selected_pdf)}[/white]"
                         )
                     
-                        # Trata o feedback de limpeza (fica no meio)
                         limpeza_msg = ""
                         if clean_stats.get("error"):
                             limpeza_msg = f"\n[bold yellow]Aviso no pré-tratamento:[/bold yellow] {clean_stats['error']}"
