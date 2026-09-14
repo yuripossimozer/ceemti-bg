@@ -4,7 +4,7 @@ import time
 import threading
 import traceback
 
-URL_SCRIPT = "https://raw.githubusercontent.com/yuripossimozer/ceemti-bg/refs/heads/main/scripts/e-docs_pdf_merge_terminal.py"
+URL_SCRIPT = "https://raw.githubusercontent.com/yuripossimozer/ceemti-bg/refs/heads/dev/scripts/e-docs_pdf_merge_terminal.py"
 nome_arquivo = URL_SCRIPT.split('/')[-1]
 baixando = True
 
