@@ -15,6 +15,7 @@ import time
 # ==========================================
 SESSION_ID = uuid.uuid4().hex[:8].upper()
 VERSION = '1.0.14'
+DT_VERSION = '14/09/2026'
 
 LOG_BASE_DIR = os.path.join(tempfile.gettempdir(), 'pdf_editor_edocs_logs')
 os.makedirs(LOG_BASE_DIR, exist_ok=True)
@@ -1146,7 +1147,7 @@ class TermuxPDFEditor:
     def display_header(self):
         self.clear_screen()
         CONSOLE.print(Panel(
-            f"[bold cyan]EDITOR DE PDF PARA E-DOCS | {VERSION} | 14/09/2026[/bold cyan]",
+            f"[bold cyan]EDITOR DE PDF PARA E-DOCS | {VERSION} | {DT_VERSION}[/bold cyan]",
             border_style="bold blue",
             padding=(0, 2)
         ))
