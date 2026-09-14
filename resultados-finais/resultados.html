@@ -835,7 +835,14 @@
         body: JSON.stringify(bodyData) 
       });
       
-      const json = await response.json();
+      const responseText = await response.text();
+      let json;
+  
+  try {
+    json = JSON.parse(responseText);
+  } catch (err) {
+    throw new Error("Erro no formato da resposta da API. Tente novamente.");
+  }
       
       if (json.error === "TOKEN_EXPIRED") {
          window.mostrarModalRenovacao('api');
