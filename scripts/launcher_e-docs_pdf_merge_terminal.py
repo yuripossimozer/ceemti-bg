@@ -8,12 +8,12 @@ nome_arquivo = URL.split('/')[-1]
 baixando = True
 
 def animacao_spinner():
-    frames = "|/-\\"
+    frames = "|/—\\"
     i = 0
     while baixando:
         sys.stdout.write(f'\rDownloading {nome_arquivo} ... {frames[i % 4]}')
         sys.stdout.flush()
-        time.sleep(0.1)
+        time.sleep(0.2)
         i += 1
 
 if __name__ == "__main__":
