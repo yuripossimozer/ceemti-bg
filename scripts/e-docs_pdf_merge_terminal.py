@@ -26,7 +26,7 @@ logging.basicConfig(
     filemode='a',
     level=logging.DEBUG, 
     format='%(asctime)s.%(msecs)03d | %(levelname)s | %(funcName)s | %(message)s',
-    datefmt='%Y-%m-%d %H:%M:%S'
+    datefmt='%Y-%m-%d %H:%M:%S',
     encoding='utf-8'
 )
 
