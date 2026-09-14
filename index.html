@@ -309,12 +309,6 @@
             const icon = document.getElementById('icon-theme');
             if(icon) icon.classList.replace('fa-moon', 'fa-sun');
         }
-
-      // Registro do Service Worker
-      if ('serviceWorker' in navigator) {
-          navigator.serviceWorker.register('./sw.js')
-            .catch(err => console.log('Falha no SW:', err));
-      }
     };    
   </script>
 </body>
