@@ -1481,6 +1481,10 @@ class TermuxPDFEditor:
                 
                     with open(out_path, 'wb') as f:
                         writer.write(f)
+                        
+                except Exception as e:
+                    status_history = [f"[bold red][ERRO][/bold red] Falha ao salvar: {e}"]
+                    continue
                     
             while True:
                 self.clear_screen()
@@ -1495,10 +1499,6 @@ class TermuxPDFEditor:
                         
                 if inp == '\x1b' or inp.lower() == 'q':
                     return
-
-                except Exception as e:
-                    status_history = [f"[bold red][ERRO][/bold red] Falha ao salvar: {e}"]
-                    continue
 
 if __name__ == '__main__':
     app = TermuxPDFEditor()
