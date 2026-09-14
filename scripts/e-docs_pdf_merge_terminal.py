@@ -1088,7 +1088,7 @@ class TermuxPDFEditor:
     def display_header(self):
         self.clear_screen()
         CONSOLE.print(Panel(
-            "[bold cyan]EDITOR DE PDF PARA E-DOCS | V1.0.5 | 13/09/2026[/bold cyan]",
+            "[bold cyan]EDITOR DE PDF PARA E-DOCS | V1.0.6 | 13/09/2026[/bold cyan]",
             border_style="bold blue",
             padding=(0, 2)
         ))
@@ -1148,7 +1148,7 @@ class TermuxPDFEditor:
                 self.pages_with_signed_mark.clear()
                 while True:
                     self.clear_screen()
-                    CONSOLE.print(Panel("[bold cyan]LIMPAR TUDO[/bold cyan]", border_style="cyan"))
+                    CONSOLE.print(Panel("[bold cyan]LIMPAR TODAS AS PÁGINAS[/bold cyan]", border_style="cyan"))
                     CONSOLE.print("\n[bold green][OK] Todos os documentos foram removidos com sucesso.[/bold green]")
                     CONSOLE.print("\n[bold red][Q + ENTER] Voltar[/bold red]")
                     inp = input("\nEscolha uma opção: ").strip()
@@ -1242,7 +1242,7 @@ class TermuxPDFEditor:
                     continue
 
             if selected_pdf:
-                CONSOLE.print(f"\n[cyan]Processando arquivo:[/cyan] {os.path.basename(selected_pdf)} ...")
+                with CONSOLE.status(f"[cyan]Processando arquivo:[/cyan] {os.path.basename(selected_pdf)}", spinner="line"):
                     
                 try:
                     pdf_path, clean_stats = clean_pdf_signatures(selected_pdf)
@@ -1397,7 +1397,7 @@ class TermuxPDFEditor:
         if not self.pages_ordered:
             while True:
                 self.clear_screen()
-                CONSOLE.print(Panel("[bold cyan]SALVAR PDF[/bold cyan]", border_style="cyan"))
+                CONSOLE.print(Panel("[bold cyan]SALVAR E EXPORTAR PDF[/bold cyan]", border_style="cyan"))
                 CONSOLE.print("\n[bold red][ERRO] Nenhuma página carregada para salvar.[/bold red]")
                 CONSOLE.print("\n[bold red][Q + ENTER] Voltar[/bold red]")
                 inp = input("\nEscolha uma opção: ").strip()
@@ -1411,7 +1411,7 @@ class TermuxPDFEditor:
         status_history = []
         while True:
             self.clear_screen()
-            CONSOLE.print(Panel("[bold cyan]SALVAR PDF[/bold cyan]", border_style="cyan"))
+            CONSOLE.print(Panel("[bold cyan]SELECIONE O NOME DO ARQUIVO[/bold cyan]", border_style="cyan"))
             CONSOLE.print(f"📂 [bold yellow]Pasta selecionada:[/bold yellow] [dim]{chosen_dir}[/dim]", highlight=False)
             
             if status_history:
@@ -1434,71 +1434,71 @@ class TermuxPDFEditor:
                 
             out_path = os.path.join(chosen_dir, filename)
                 
-            CONSOLE.print(f"\n[cyan]Processando documento e gerando:[/cyan] {filename} ...")
+            # Substituímos o print pelo status, englobando a criação e o try/except
+            with CONSOLE.status(f"[cyan]Processando documento e gerando:[/cyan] {filename}", spinner="line"):
+                writer = PdfWriter()
+                edocs_count = 0
+                signed_count = 0
                 
-            writer = PdfWriter()
-            edocs_count = 0
-            signed_count = 0
-            
-            try:
-                for file_path, pno in self.pages_ordered:
-                    key = (file_path, pno)
-                    if PYMUPDF_AVAILABLE and key in self.pages_with_signed_mark:
-                        src = fitz.open(file_path)
-                        page0 = src.load_page(pno)
-                        image_only_pdf = build_single_page_image_pdf_bytes(page0, dpi=300)
-                        writer.append(io.BytesIO(image_only_pdf))
-                        signed_count += 1
-                        src.close()
-                    elif PYMUPDF_AVAILABLE and key in self.pages_with_edocs:
-                        src = fitz.open(file_path)
-                        single = fitz.open()
-                        single.insert_pdf(src, from_page=pno, to_page=pno)
+                try:
+                    for file_path, pno in self.pages_ordered:
+                        key = (file_path, pno)
+                        if PYMUPDF_AVAILABLE and key in self.pages_with_signed_mark:
+                            src = fitz.open(file_path)
+                            page0 = src.load_page(pno)
+                            image_only_pdf = build_single_page_image_pdf_bytes(page0, dpi=300)
+                            writer.append(io.BytesIO(image_only_pdf))
+                            signed_count += 1
+                            src.close()
+                        elif PYMUPDF_AVAILABLE and key in self.pages_with_edocs:
+                            src = fitz.open(file_path)
+                            single = fitz.open()
+                            single.insert_pdf(src, from_page=pno, to_page=pno)
                         
-                        # Limpa metadados internos da página
-                        single.del_xml_metadata()
+                            # Limpa metadados internos da página
+                            single.del_xml_metadata()
                         
-                        if shift_edocs_stamp_left_in_page(single[0], dx_pts=EDOCS_SHIFT_LEFT_PTS):
-                            edocs_count += 1
+                            if shift_edocs_stamp_left_in_page(single[0], dx_pts=EDOCS_SHIFT_LEFT_PTS):
+                                edocs_count += 1
                         
-                        buf = io.BytesIO()
-                        single.save(buf, garbage=4, deflate=True, clean=True, expand=255, pretty=False, no_new_id=True)
-                        buf.seek(0)
-                        writer.append(buf)
-                        single.close()
-                        src.close()
-                    else:
-                        writer.append(file_path, pages=(pno, pno + 1))
+                            buf = io.BytesIO()
+                            single.save(buf, garbage=4, deflate=True, clean=True, expand=255, pretty=False, no_new_id=True)
+                            buf.seek(0)
+                            writer.append(buf)
+                            single.close()
+                            src.close()
+                        else:
+                            writer.append(file_path, pages=(pno, pno + 1))
                         
-                writer.add_metadata({
-                    '/Creator': 'Scanner', 
-                    '/Producer': 'Generic',
-                    '/Author': '',
-                    '/Title': ''
-                })
-                # Remove qualquer vestígio de histórico de IDs para conformidade com a versão gráfica
-                writer._ID = None
+                    writer.add_metadata({
+                        '/Creator': 'Scanner', 
+                        '/Producer': 'Generic',
+                        '/Author': '',
+                        '/Title': ''
+                    })
+                    # Remove qualquer vestígio de histórico de IDs para conformidade com a versão gráfica
+                    writer._ID = None
                 
-                with open(out_path, 'wb') as f:
-                    writer.write(f)
+                    with open(out_path, 'wb') as f:
+                        writer.write(f)
                     
-                while True:
-                    self.clear_screen()
-                    CONSOLE.print(Panel("[bold cyan]SALVAR PDF[/bold cyan]", border_style="cyan"))
-                    CONSOLE.print(f"📂 [bold yellow]Pasta selecionada:[/bold yellow] [dim]{chosen_dir}[/dim]\n", highlight=False)
-                    CONSOLE.print(f"[bold green][SUCESSO][/bold green] PDF salvo em: [cyan]{out_path}[/cyan]", highlight=False)
-                    CONSOLE.print(f"-> E-DOCS reajustados: [bold white]{edocs_count}[/bold white]")
-                    CONSOLE.print(f"-> Assinaturas rasterizadas: [bold white]{signed_count}[/bold white]")
-                    CONSOLE.print("\n[bold red][Q + ENTER] Voltar[/bold red]")
+                    while True:
+                        self.clear_screen()
+                        CONSOLE.print(Panel("[bold cyan]SALVAR E EXPORTAR PDF[/bold cyan]", border_style="cyan"))
+                        CONSOLE.print(f"📂 [bold yellow]Pasta selecionada:[/bold yellow] [dim]{chosen_dir}[/dim]\n", highlight=False)
+                        CONSOLE.print(f"[bold green][SUCESSO][/bold green] PDF salvo em: [cyan]{out_path}[/cyan]", highlight=False)
+                        CONSOLE.print(f"-> E-DOCS reajustados: [bold white]{edocs_count}[/bold white]")
+                        CONSOLE.print(f"-> Assinaturas rasterizadas: [bold white]{signed_count}[/bold white]")
+                        CONSOLE.print("\n[bold red][Q + ENTER] Voltar[/bold red]")
                     
-                    inp = input("\nEscolha uma opção: ").strip()
+                        inp = input("\nEscolha uma opção: ").strip()
                         
-                    if inp == '\x1b' or inp.lower() == 'q':
-                        return
+                        if inp == '\x1b' or inp.lower() == 'q':
+                            return
 
-            except Exception as e:
-                status_history = [f"[bold red][ERRO][/bold red] Falha ao salvar: {e}"]
-                continue
+                except Exception as e:
+                    status_history = [f"[bold red][ERRO][/bold red] Falha ao salvar: {e}"]
+                    continue
 
 if __name__ == '__main__':
     app = TermuxPDFEditor()
