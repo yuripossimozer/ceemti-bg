@@ -742,16 +742,30 @@ def detect_signed_pages_in_pdf(pdf_path: str) -> set[int]:
                 except Exception:
                     return None
 
-            def _iter_fields(field_refs):
+            def _iter_fields(field_refs, visited=None):
+                if visited is None:
+                    visited = set()
+                
                 for fref in field_refs or []:
                     try:
+                        ref_id = None
+                        if hasattr(fref, "indirect_reference"):
+                            ref_id = (fref.indirect_reference.idnum, fref.indirect_reference.generation)
+                        
+                        if ref_id:
+                            if ref_id in visited:
+                                continue
+                            visited.add(ref_id)
+                            
                         fobj = fref.get_object()
                     except Exception:
                         continue
+                        
                     if not isinstance(fobj, dict):
                         continue
+                        
                     yield fobj
-                    for kid in _iter_fields(fobj.get("/Kids", [])):
+                    for kid in _iter_fields(fobj.get("/Kids", []), visited):
                         yield kid
 
             root = reader.trailer.get("/Root", {})
@@ -1098,7 +1112,7 @@ class TermuxPDFEditor:
     def display_header(self):
         self.clear_screen()
         CONSOLE.print(Panel(
-            "[bold cyan]EDITOR DE PDF PARA E-DOCS | V1.0.7 | 13/09/2026[/bold cyan]",
+            "[bold cyan]EDITOR DE PDF PARA E-DOCS | V1.0.8 | 14/09/2026[/bold cyan]",
             border_style="bold blue",
             padding=(0, 2)
         ))
@@ -1451,33 +1465,31 @@ class TermuxPDFEditor:
                     for file_path, pno in self.pages_ordered:
                         key = (file_path, pno)
                         if PYMUPDF_AVAILABLE and key in self.pages_with_signed_mark:
-                            src = fitz.open(file_path)
-                            page0 = src.load_page(pno)
-                            image_only_pdf = build_single_page_image_pdf_bytes(page0, dpi=300)
-                            
-                            buf = io.BytesIO(image_only_pdf)
-                            alive_buffers.append(buf)
-                            writer.append(buf)
-                            
-                            signed_count += 1
-                            src.close()
+                            with fitz.open(file_path) as src:
+                                page0 = src.load_page(pno)
+                                image_only_pdf = build_single_page_image_pdf_bytes(page0, dpi=300)
+                                
+                                buf = io.BytesIO(image_only_pdf)
+                                alive_buffers.append(buf)
+                                writer.append(buf)
+                                signed_count += 1
+                                
                         elif PYMUPDF_AVAILABLE and key in self.pages_with_edocs:
-                            src = fitz.open(file_path)
-                            single = fitz.open()
-                            single.insert_pdf(src, from_page=pno, to_page=pno)
-                            single.del_xml_metadata()
-                        
-                            if shift_edocs_stamp_left_in_page(single[0], dx_pts=EDOCS_SHIFT_LEFT_PTS):
-                                edocs_count += 1
-                        
-                            buf = io.BytesIO()
-                            single.save(buf, garbage=4, deflate=True, clean=True, expand=255, pretty=False, no_new_id=True)
-                            buf.seek(0)
-                            alive_buffers.append(buf)
-                            writer.append(buf)
+                            with fitz.open(file_path) as src:
+                                with fitz.open() as single:
+                                    single.insert_pdf(src, from_page=pno, to_page=pno)
+                                    single.del_xml_metadata()
+                                
+                                    if shift_edocs_stamp_left_in_page(single[0], dx_pts=EDOCS_SHIFT_LEFT_PTS):
+                                        edocs_count += 1
+                                
+                                    buf = io.BytesIO()
+                                    single.save(buf, garbage=4, deflate=True, clean=True, expand=255, pretty=False, no_new_id=True)
+                                    buf.seek(0)
+                                    
+                                    alive_buffers.append(buf)
+                                    writer.append(buf)
                             
-                            single.close()
-                            src.close()
                         else:
                             writer.append(file_path, pages=(pno, pno + 1))
                         
