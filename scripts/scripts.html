@@ -1,0 +1,411 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta name="theme-color" content="#fdfcff" id="meta-theme-color">
+  <link rel="apple-touch-icon" href="../icon.png">  
+  <link rel="icon" type="image/png" href="../icon.png">
+  
+  <title>Download de Scripts</title>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+
+  <script>
+    // Previne flash de tema claro ao carregar
+    (function() {
+      try {
+        const savedTheme = localStorage.getItem('theme');
+        const metaTheme = document.getElementById('meta-theme-color');
+        if (savedTheme === 'dark') {
+          document.documentElement.setAttribute('data-theme', 'dark');
+          if (metaTheme) metaTheme.setAttribute('content', '#111315');
+        }
+      } catch (e) {}
+    })();
+  </script>
+
+  <style>
+    /* VARIÁVEIS & TEMA */
+    :root {
+      --primary: #005fa4;
+      --on-primary: #ffffff;
+      --primary-container: #d5e3ff;
+      --on-primary-container: #001b3c;
+      --success: #146c2e;
+      --background: #fdfcff;
+      --surface: #fdfcff;
+      --surface-container: #f0f4f9;
+      --outline: #74777f;
+      --outline-variant: #c4c7cf;
+      --text-main: #1a1c1e;
+      --text-secondary: #3b3f46;
+      --radius-card: 24px;
+      --radius-btn: 100px;
+    }
+
+    [data-theme="dark"] {
+      --primary: #a8c7fa;
+      --on-primary: #00315b;
+      --primary-container: #004786;
+      --on-primary-container: #d5e3ff;
+      --success: #6dd58c;
+      --background: #111315;
+      --surface: #111315;
+      --surface-container: #1d2024;
+      --outline: #8e9099;
+      --outline-variant: #44474e;
+      --text-main: #e2e2e6;
+      --text-secondary: #c4c7c5;
+    }
+
+    /* ESTRUTURA */
+    body {
+      width: 100%;
+      min-height: 100dvh;
+      background-color: var(--background);
+      color: var(--text-main);
+      font-family: 'Roboto', sans-serif;
+      transition: background-color 0.3s ease, color 0.3s ease;
+      padding-bottom: 60px;
+    }
+
+    /* COMPONENTES */
+    .app-bar {
+      background-color: var(--surface-container);
+      padding: 1rem 1.5rem;
+      border-radius: var(--radius-card);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 1.5rem;
+      border: 1px solid var(--outline-variant);
+    }
+    .app-title { font-weight: 700; color: var(--text-secondary); font-size: 1.25rem; }
+
+    .m-card {
+      background-color: var(--surface-container);
+      border-radius: var(--radius-card);
+      padding: 1.5rem;
+      border: 1px solid var(--outline-variant);
+      margin-bottom: 1.5rem;
+      height: 100%;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      transition: transform 0.2s;
+    }
+
+    .btn-icon {
+      background: transparent; border: none; color: var(--text-secondary);
+      font-size: 1.2rem; width: 40px; height: 40px; border-radius: 50%;
+      transition: 0.2s; display: inline-flex; align-items: center; justify-content: center;
+    }
+    .btn-icon:hover { background-color: var(--primary-container); color: var(--on-primary-container); }
+    
+    .btn-action {
+      background-color: var(--primary); 
+      color: var(--on-primary);
+      border: none; 
+      border-radius: var(--radius-btn);
+      padding: 0.75rem 1.5rem; 
+      font-weight: 500;
+      display: flex; 
+      align-items: center; 
+      justify-content: center;
+      gap: 10px;
+      transition: 0.2s;
+      text-decoration: none;
+      width: 100%;
+      cursor: pointer;
+    }
+    .btn-action:hover { filter: brightness(1.1); transform: translateY(-1px); color: var(--on-primary); }
+    .btn-action:active { transform: translateY(1px); }
+    
+    .btn-action.disabled {
+      background-color: var(--outline-variant);
+      color: var(--text-secondary);
+      cursor: not-allowed;
+      pointer-events: none;
+      opacity: 0.7;
+    }
+
+    a.btn-icon { 
+      text-decoration: none; 
+      color: var(--text-secondary);
+    }
+    a.btn-icon:hover { color: var(--on-primary-container); }
+
+    /* ESPECÍFICOS */
+    .script-icon {
+      width: 48px;
+      height: 48px;
+      background-color: var(--primary-container);
+      color: var(--on-primary-container);
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.5rem;
+      margin-bottom: 1rem;
+    }
+
+    .status-text {
+      font-size: 0.8rem;
+      font-weight: 500;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin-top: 10px;
+    }
+    .status-text.loading { color: var(--outline); }
+    .status-text.ready { color: var(--success); }
+    .status-text.error { color: #b3261e; }
+
+    .instrucoes-box {
+      background-color: var(--background);
+      border: 1px dashed var(--outline);
+      border-radius: 12px;
+      padding: 1rem;
+      font-size: 0.9rem;
+      color: var(--text-secondary);
+    }
+    
+    .badge-versao {
+      background-color: var(--primary-container);
+      color: var(--on-primary-container);
+      font-weight: 600;
+      letter-spacing: 0.5px;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="container pt-3">
+    
+    <div class="app-bar">
+      <div class="d-flex align-items-center gap-2">
+        <span class="app-title">SCRIPTS</span>
+      </div>
+      <div class="d-flex gap-2">
+        <a href="../index.html" class="btn-icon" title="Voltar ao Início">
+          <i class="fas fa-home"></i>
+        </a>
+
+        <button class="btn-icon" onclick="window.toggleTheme()" title="Alternar Tema">
+          <i class="fas fa-moon" id="icon-theme"></i>
+        </button>
+      </div>
+    </div>
+
+    <h6 class="text-secondary fw-bold text-uppercase ms-2 mb-3 small ls-1">Scripts Disponíveis</h6>
+    <div class="row g-3" id="grid-scripts">
+        <div class="col-12 text-center py-5">
+            <div class="spinner-border text-primary" role="status"></div>
+            <p class="mt-2 text-secondary small">Conectando ao GitHub...</p>
+        </div>
+    </div>
+
+  </div>
+
+<script>
+    // =========================================
+    // 1. CONFIGURAÇÃO GITHUB RAW
+    // =========================================
+    const GITHUB_USER = 'yuripossimozer';
+    const GITHUB_REPO = 'ceemti-bg';
+    const GITHUB_BRANCH = 'main';
+    const GITHUB_PATH = 'scripts';
+    
+    const SCRIPTS = [
+        { 
+            arquivo: 'launcher_e-docs_pdf_merge_terminal.py', 
+            titulo: 'E-DOCS PDF MERGE', 
+            desc: 'Ajusta carimbo lateral E-Docs e remove assinaturas eletrônicas, permitindo mesclar documentos para re-envio ao sistema.', 
+            icon: 'fa-file',
+            tipo_linguagem: 'Python',
+            tipo_execucao: 'launcher' 
+        }
+    ];
+
+    // =========================================
+    // 2. CORE: CARREGAMENTO DE SCRIPTS
+    // =========================================
+    async function carregarScripts() {
+        const grid = document.getElementById('grid-scripts');
+        grid.innerHTML = ''; 
+
+        SCRIPTS.forEach((item, index) => {
+            const html = `
+                <div class="col-12 col-md-6 col-lg-3">
+                    <div class="m-card text-center align-items-center">
+                        <div class="script-icon"><i class="fas ${item.icon}"></i></div>
+                        <h5 class="fw-bold mb-1" style="font-size: 1rem;">${item.titulo}</h5>
+                        
+                        <div class="d-flex justify-content-center gap-2 mb-2">
+                            <span id="versao-${index}" class="badge badge-versao rounded-pill">Buscando</span>
+                            <span class="badge bg-secondary rounded-pill">${item.tipo_linguagem}</span>
+                        </div>
+                        
+                        <p class="small text-secondary mb-3">${item.desc}</p>
+                        
+                        <a id="btn-${index}" href="#" class="btn-action disabled">
+                            <span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
+                            Carregando...
+                        </a>
+                        <div id="status-${index}" class="status-text loading">Verificando...</div>
+                    </div>
+                </div>
+            `;
+            grid.insertAdjacentHTML('beforeend', html);
+            baixarEProcessarScript(item, index);
+        });
+    }
+
+    // Função auxiliar para encontrar a variável VERSION no meio do código
+    function extrairVersao(textoCode) {
+        // Procura por algo como VERSION = 1.0.14, VERSION="1.0.14", version = '1.0'
+        const regex = /VERSION\s*=\s*['"]?([^'"\s\r\n]+)['"]?/i; 
+        const match = textoCode.match(regex);
+        
+        if (match && match[1]) {
+            let ver = match[1];
+            // Adiciona um 'v' na frente caso o valor extraído seja apenas números (ex: 1.0.14 -> v1.0.14)
+            if (!ver.toLowerCase().startsWith('v')) {
+                ver = 'v' + ver;
+            }
+            return ver;
+        }
+        return 'v?'; 
+    }
+
+    async function baixarEProcessarScript(item, index) {
+        const caminho = GITHUB_PATH ? `${GITHUB_PATH}/` : '';
+        const url = `https://raw.githubusercontent.com/${GITHUB_USER}/${GITHUB_REPO}/${GITHUB_BRANCH}/${caminho}${item.arquivo}?v=` + new Date().getTime();
+
+        try {
+            const response = await fetch(url);
+            if(!response.ok) throw new Error("Erro ao localizar arquivo no GitHub");
+            
+            const textoScript = await response.text(); 
+            
+            const btn = document.getElementById(`btn-${index}`);
+            const status = document.getElementById(`status-${index}`);
+            const chipVersao = document.getElementById(`versao-${index}`);
+            
+            // --- LÓGICA DE VERSÃO DINÂMICA ---
+            if (item.tipo_execucao === 'script') {
+                chipVersao.innerText = extrairVersao(textoScript);
+            } 
+            else if (item.tipo_execucao === 'launcher') {
+                const urlMatch = textoScript.match(/URL_SCRIPT\s*=\s*['"]([^'"]+)['"]/i);
+                
+                if (urlMatch && urlMatch[1]) {
+                    const urlReal = urlMatch[1] + '?v=' + new Date().getTime();
+                    try {
+                        const responseReal = await fetch(urlReal);
+                        if (responseReal.ok) {
+                            const textoReal = await responseReal.text();
+                            chipVersao.innerText = extrairVersao(textoReal);
+                        } else {
+                            chipVersao.innerText = 'v? (Erro Target)';
+                        }
+                    } catch (e) {
+                        chipVersao.innerText = 'v? (CORS/Erro)';
+                    }
+                } else {
+                    chipVersao.innerText = 'v? (Sem URL)';
+                }
+            }
+
+            // --- LIBERAR O DOWNLOAD ---
+            const blob = new Blob([textoScript], { type: 'text/plain' });
+            const objectUrl = URL.createObjectURL(blob);
+            
+            btn.href = objectUrl;
+            btn.download = item.arquivo;
+            btn.innerHTML = `FAZER DOWNLOAD`;
+            btn.classList.remove('disabled');
+            
+            status.innerText = "Pronto para Baixar";
+            status.className = "status-text ready";
+
+        } catch (err) {
+            console.error(err);
+            const btn = document.getElementById(`btn-${index}`);
+            const status = document.getElementById(`status-${index}`);
+            const chipVersao = document.getElementById(`versao-${index}`);
+            
+            chipVersao.innerText = 'Erro';
+            btn.innerHTML = `<i class="fas fa-exclamation-triangle"></i> Arquivo Não Encontrado`;
+            status.innerText = "Erro ao conectar";
+            status.className = "status-text error";
+        }
+    }
+
+    // =========================================
+    // 3. UI: TEMAS E ANIMAÇÕES
+    // =========================================
+    function hexToRgb(hex) {
+      const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+      return result ? { r: parseInt(result[1], 16), g: parseInt(result[2], 16), b: parseInt(result[3], 16) } : null;
+    }
+
+    function rgbToHex(r, g, b) {
+      return "#" + ((1 << 24) + (r << 16) + (g << 8) + b).toString(16).slice(1);
+    }
+
+    function animarMetaCor(corOrigem, corDestino, duration) {
+      const start = hexToRgb(corOrigem);
+      const end = hexToRgb(corDestino);
+      const metaTag = document.getElementById('meta-theme-color');
+      
+      if (!start || !end || !metaTag) return;
+      let startTime = null;
+
+      function animationStep(timestamp) {
+        if (!startTime) startTime = timestamp;
+        const progress = timestamp - startTime;
+        const percent = Math.min(progress / duration, 1);
+        const r = Math.round(start.r + (end.r - start.r) * percent);
+        const g = Math.round(start.g + (end.g - start.g) * percent);
+        const b = Math.round(start.b + (end.b - start.b) * percent);
+        metaTag.setAttribute('content', rgbToHex(r, g, b));
+        if (progress < duration) window.requestAnimationFrame(animationStep);
+      }
+      window.requestAnimationFrame(animationStep);
+    }
+
+    window.toggleTheme = function() {
+      const htmlTag = document.documentElement;
+      const icon = document.getElementById('icon-theme');
+      const COR_LIGHT = '#fdfcff';
+      const COR_DARK = '#111315';
+      const isDark = htmlTag.getAttribute('data-theme') === 'dark';
+      
+      if (isDark) {
+        htmlTag.removeAttribute('data-theme');
+        if(icon) icon.classList.replace('fa-sun', 'fa-moon');
+        localStorage.setItem('theme', 'light');
+        animarMetaCor(COR_DARK, COR_LIGHT, 300);
+      } else {
+        htmlTag.setAttribute('data-theme', 'dark');
+        if(icon) icon.classList.replace('fa-moon', 'fa-sun');
+        localStorage.setItem('theme', 'dark');
+        animarMetaCor(COR_LIGHT, COR_DARK, 300);
+      }
+    };
+
+    window.onload = function() {
+        if (document.documentElement.getAttribute('data-theme') === 'dark') {
+            const icon = document.getElementById('icon-theme');
+            if(icon) icon.classList.replace('fa-moon', 'fa-sun');
+        }
+        carregarScripts();
+    };    
+  </script>
+</body>
+</html>
