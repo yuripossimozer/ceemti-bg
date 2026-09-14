@@ -8,16 +8,18 @@ import tempfile
 import shutil
 import atexit
 import unicodedata
+import time
 
 # ==========================================
 # CONFIGURAÇÃO DE DIAGNÓSTICO (LOGS)
 # ==========================================
-SESSION_ID = uuid.uuid4().hex[:8]
+SESSION_ID = uuid.uuid4().hex[:8].upper()
 
 LOG_BASE_DIR = os.path.join(tempfile.gettempdir(), 'pdf_editor_edocs_logs')
 os.makedirs(LOG_BASE_DIR, exist_ok=True)
 
-LOG_FILE = os.path.join(LOG_BASE_DIR, f"log_session_{SESSION_ID}.txt")
+timestamp = time.strftime("%Y%m%d-%H%M%S")
+LOG_FILE = os.path.join(LOG_BASE_DIR, f"LOG_{timestamp}_{SESSION_ID}.txt")
 
 logging.basicConfig(
     filename=LOG_FILE,
@@ -1142,7 +1144,7 @@ class TermuxPDFEditor:
     def display_header(self):
         self.clear_screen()
         CONSOLE.print(Panel(
-            "[bold cyan]EDITOR DE PDF PARA E-DOCS | V1.0.12 | 14/09/2026[/bold cyan]",
+            "[bold cyan]EDITOR DE PDF PARA E-DOCS | V1.0.13 | 14/09/2026[/bold cyan]",
             border_style="bold blue",
             padding=(0, 2)
         ))
