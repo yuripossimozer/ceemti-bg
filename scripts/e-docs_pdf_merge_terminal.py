@@ -1146,7 +1146,7 @@ class TermuxPDFEditor:
     def display_header(self):
         self.clear_screen()
         CONSOLE.print(Panel(
-            "[bold cyan]EDITOR DE PDF PARA E-DOCS | {VERSION} | 14/09/2026[/bold cyan]",
+            f"[bold cyan]EDITOR DE PDF PARA E-DOCS | {VERSION} | 14/09/2026[/bold cyan]",
             border_style="bold blue",
             padding=(0, 2)
         ))
