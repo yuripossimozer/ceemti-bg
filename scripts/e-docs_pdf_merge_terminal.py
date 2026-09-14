@@ -27,6 +27,7 @@ logging.basicConfig(
     level=logging.DEBUG, 
     format='%(asctime)s.%(msecs)03d | %(levelname)s | %(funcName)s | %(message)s',
     datefmt='%Y-%m-%d %H:%M:%S'
+    encoding='utf-8'
 )
 
 logging.info(f"Sessão iniciada. Diretório temporário: {tempfile.gettempdir()}")
