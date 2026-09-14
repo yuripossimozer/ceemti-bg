@@ -9,7 +9,25 @@ import shutil
 import atexit
 import unicodedata
 
-logging.basicConfig(stream=sys.stdout, level=logging.ERROR, format='%(levelname)s: %(message)s')
+# ==========================================
+# CONFIGURAÇÃO DE DIAGNÓSTICO (LOGS)
+# ==========================================
+SESSION_ID = uuid.uuid4().hex[:8]
+
+LOG_BASE_DIR = os.path.join(tempfile.gettempdir(), 'pdf_editor_edocs_logs')
+os.makedirs(LOG_BASE_DIR, exist_ok=True)
+
+LOG_FILE = os.path.join(LOG_BASE_DIR, f"log_session_{SESSION_ID}.txt")
+
+logging.basicConfig(
+    filename=LOG_FILE,
+    filemode='a',
+    level=logging.DEBUG, 
+    format='%(asctime)s | %(levelname)s | %(funcName)s | %(message)s',
+    datefmt='%Y-%m-%d %H:%M:%S'
+)
+
+logging.info(f"Sessão iniciada. Diretório temporário: {tempfile.gettempdir()}")
 
 # ==========================================
 # VERIFICAÇÃO INICIAL DE DEPENDÊNCIAS
@@ -62,7 +80,6 @@ EDOCS_STAMP_OMIT_EDOCS_WORD = False
 # ==========================================
 # ROTINA DE LIMPEZA DE ARQUIVOS TEMPORÁRIOS
 # ==========================================
-SESSION_ID = uuid.uuid4().hex[:8]
 TEMP_BASE_DIR = os.path.join(tempfile.gettempdir(), 'pdf_editor_edocs_temp')
 SESSION_TEMP_DIR = os.path.join(TEMP_BASE_DIR, f"session_{SESSION_ID}")
 
@@ -1112,7 +1129,7 @@ class TermuxPDFEditor:
     def display_header(self):
         self.clear_screen()
         CONSOLE.print(Panel(
-            "[bold cyan]EDITOR DE PDF PARA E-DOCS | V1.0.8 | 14/09/2026[/bold cyan]",
+            "[bold cyan]EDITOR DE PDF PARA E-DOCS | V1.0.9 | 14/09/2026[/bold cyan]",
             border_style="bold blue",
             padding=(0, 2)
         ))
@@ -1132,6 +1149,7 @@ class TermuxPDFEditor:
         table.add_row("[4]", "❌ Remover Páginas")
         table.add_row("[5]", "🧹 Limpar Tudo")
         table.add_row("[6]", "💾 Salvar PDF")
+        table.add_row("[7]", "🐛 Depuração")
         
         CONSOLE.print(Panel(table, title="[bold yellow]MENU PRINCIPAL[/bold yellow]", border_style="dim white"))
         CONSOLE.print("\n[bold red][Q + ENTER] Sair do sistema[/bold red]")
@@ -1177,6 +1195,8 @@ class TermuxPDFEditor:
                         break
             elif choice == '6':
                 self.merge_and_save()
+            elif choice == '7':
+                self.view_logs()
             elif choice == '0' or choice == '\x1b' or choice.lower() == 'q':
                 self.clear_screen()
                 break
@@ -1526,6 +1546,65 @@ class TermuxPDFEditor:
                         
                 if inp == '\x1b' or inp.lower() == 'q':
                     return
+    def view_logs(self):
+        status = []
+        while True:
+            self.clear_screen()
+            CONSOLE.print(Panel("[bold cyan]DIAGNÓSTICO E LOGS DA SESSÃO[/bold cyan]", border_style="cyan"))
+            
+            try:
+                log_files = [f for f in os.listdir(LOG_BASE_DIR) if f.endswith('.txt')]
+                total_logs = len(log_files)
+            except Exception:
+                total_logs = 0
+
+            try:
+                with open(LOG_FILE, "r", encoding="utf-8") as f:
+                    logs = f.readlines()
+            except FileNotFoundError:
+                logs = []
+
+            if not logs:
+                CONSOLE.print("\n[dim]A sessão atual ainda não gerou nenhum registro.[/dim]")
+            else:
+                CONSOLE.print(f"\n[bold yellow]Últimos registros da sessão atual ({SESSION_ID}):[/bold yellow]\n")
+                for line in logs[-20:]:
+                    line = line.strip()
+                    if "ERROR" in line or "CRITICAL" in line:
+                        CONSOLE.print(f"[bold red]{line}[/bold red]")
+                    elif "WARNING" in line:
+                        CONSOLE.print(f"[bold yellow]{line}[/bold yellow]")
+                    elif "INFO" in line:
+                        CONSOLE.print(f"[cyan]{line}[/cyan]")
+                    else:
+                        CONSOLE.print(f"[dim]{line}[/dim]")
+            
+            CONSOLE.print("\n" + "─" * 45)
+            CONSOLE.print(f"📦 Há um total de [bold white]{total_logs}[/bold white] arquivo(s) de log no sistema.")
+            
+            if status:
+                CONSOLE.print()
+                for st in status: CONSOLE.print(st)
+                status.clear()
+
+            CONSOLE.print("\n[bold red][Q + ENTER][/bold red] Voltar  |  [bold red][X + ENTER][/bold red] Apagar histórico antigo")
+            inp = input("\nEscolha uma opção: ").strip().lower()
+
+            if inp == 'q' or inp == '\x1b':
+                break
+            elif inp == 'x':
+                deleted = 0
+                try:
+                    for f in os.listdir(LOG_BASE_DIR):
+                        file_path = os.path.join(LOG_BASE_DIR, f)
+                        if os.path.isfile(file_path) and file_path != LOG_FILE:
+                            os.remove(file_path)
+                            deleted += 1
+                    status = [f"[bold green][OK][/bold green] {deleted} arquivo(s) de log antigo(s) apagado(s)."]
+                    logging.info(f"Limpeza de log executada. {deleted} arquivos removidos.")
+                except Exception as e:
+                    status = [f"[bold red][ERRO][/bold red] Falha ao apagar logs: {e}"]
+                    logging.error(f"Erro ao limpar logs antigos: {e}")
 
 if __name__ == '__main__':
     app = TermuxPDFEditor()
