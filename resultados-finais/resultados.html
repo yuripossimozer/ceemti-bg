@@ -7,7 +7,6 @@
   
   <title>Resultados Finais</title>
 
-  <link rel="manifest" href="../manifest.json">
   <link rel="apple-touch-icon" href="../icon.png">
   <link rel="icon" type="image/png" href="../icon.png">
 
@@ -805,12 +804,6 @@
             iniciarMonitoramentoInatividade();
           })
           .catch(() => window.fazerLogout());
-      }
-      
-      // Registro do Service Worker
-      if ('serviceWorker' in navigator) {
-          navigator.serviceWorker.register('../sw.js')
-            .catch(err => console.log('Falha no SW:', err));
       }
     };
 
