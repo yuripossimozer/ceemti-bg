@@ -8,28 +8,66 @@ import tempfile
 import shutil
 import atexit
 import unicodedata
+import time
 
-logging.basicConfig(stream=sys.stdout, level=logging.ERROR, format='%(levelname)s: %(message)s')
+# ==========================================
+# CONFIGURAÇÃO DE DIAGNÓSTICO (LOGS)
+# ==========================================
+SESSION_ID = uuid.uuid4().hex[:8].upper()
 
-# Tentativa de importação das bibliotecas do PDF
+LOG_BASE_DIR = os.path.join(tempfile.gettempdir(), 'pdf_editor_edocs_logs')
+os.makedirs(LOG_BASE_DIR, exist_ok=True)
+
+timestamp = time.strftime("%Y%m%d-%H%M%S")
+LOG_FILE = os.path.join(LOG_BASE_DIR, f"LOG_{timestamp}_{SESSION_ID}.txt")
+
+logging.basicConfig(
+    filename=LOG_FILE,
+    filemode='a',
+    level=logging.DEBUG, 
+    format='%(asctime)s.%(msecs)03d | %(levelname)s | %(funcName)s | %(message)s',
+    datefmt='%Y-%m-%d %H:%M:%S'
+)
+
+logging.info(f"Sessão iniciada. Diretório temporário: {tempfile.gettempdir()}")
+
+# ==========================================
+# VERIFICAÇÃO INICIAL DE DEPENDÊNCIAS
+# ==========================================
+missing_packages = []
+
 try:
-    import fitz  # PyMuPDF
-    PYMUPDF_AVAILABLE = True
+    import fitz
 except ImportError:
-    PYMUPDF_AVAILABLE = False
-    fitz = None
-    print("\n[AVISO] Biblioteca 'PyMuPDF' (fitz) não encontrada. Instale com: pip install PyMuPDF")
+    missing_packages.append("PyMuPDF")
 
 try:
-    from pypdf import PdfReader, PdfWriter
-    PYPDF_AVAILABLE = True
-except ImportError as e:
-    PYPDF_AVAILABLE = False
-    class PdfWriter: pass
-    class PdfReader: pass
-    print(f"\n[AVISO] Biblioteca 'pypdf' não encontrada: {e}. A junção estará desabilitada.")
+    import pypdf
+except ImportError:
+    missing_packages.append("pypdf")
 
-# Importação da biblioteca de UI 'rich' (sem fallback)
+try:
+    import rich
+except ImportError:
+    missing_packages.append("rich")
+
+if missing_packages:
+    print("\n[ERRO FATAL] O script não pode ser iniciado por falta de dependências.")
+    print("Os seguintes pacotes não foram encontrados:")
+    for pkg in missing_packages:
+        print(f"  - {pkg}")
+    print(f"\nPor favor, instale as dependências executando o comando abaixo:")
+    print(f"pip install {' '.join(missing_packages)}\n")
+    sys.exit(1)
+
+# Se o código chegou até aqui, todas as bibliotecas estão disponíveis.
+# Mantemos as flags como True para não quebrar a lógica interna do restante do script.
+PYMUPDF_AVAILABLE = True
+PYPDF_AVAILABLE = True
+
+from pypdf import PdfReader, PdfWriter
+from pypdf.generic import NameObject, ArrayObject, DictionaryObject, StreamObject
+
 from rich.console import Console
 from rich.panel import Panel
 from rich.table import Table
@@ -44,66 +82,189 @@ EDOCS_STAMP_OMIT_EDOCS_WORD = False
 # ==========================================
 # ROTINA DE LIMPEZA DE ARQUIVOS TEMPORÁRIOS
 # ==========================================
+TEMP_BASE_DIR = os.path.join(tempfile.gettempdir(), 'pdf_editor_edocs_temp')
+SESSION_TEMP_DIR = os.path.join(TEMP_BASE_DIR, f"session_{SESSION_ID}")
 
-def cleanup_temp_files():
-    """Remove a pasta de arquivos temporários e todos os PDFs residuais ao encerrar o programa."""
-    temp_dir = os.path.join(tempfile.gettempdir(), 'pdf_editor_temp')
-    if os.path.exists(temp_dir):
+def cleanup_old_temp_files():
+    """Varre e deleta pastas de sessões antigas abandonadas (prevenção contra SIGKILL)."""
+    if os.path.exists(TEMP_BASE_DIR):
+        for d in os.listdir(TEMP_BASE_DIR):
+            path = os.path.join(TEMP_BASE_DIR, d)
+            if os.path.isdir(path) and d != f"session_{SESSION_ID}":
+                try:
+                    arquivos = os.listdir(path)
+                    qtd = len(arquivos)
+                    nomes = ", ".join(arquivos) if arquivos else "Nenhum arquivo"
+                    
+                    shutil.rmtree(path)
+                    logging.info(f"🧹 LIMPEZA INICIAL: Pasta órfã removida '{path}'. Continha {qtd} arquivo(s): [{nomes}]")
+                except Exception as e:
+                    logging.error(f"❌ Erro ao limpar pasta órfã '{path}': {e}")
+
+def cleanup_current_session():
+    """Remove a pasta da sessão atual ao encerrar graciosamente e registra o fim da sessão."""
+    if os.path.exists(SESSION_TEMP_DIR):
         try:
-            shutil.rmtree(temp_dir)
-            logging.debug("Arquivos temporários apagados com sucesso.")
+            arquivos = os.listdir(SESSION_TEMP_DIR)
+            qtd = len(arquivos)
+            nomes = ", ".join(arquivos) if arquivos else "Nenhum arquivo"
+            
+            shutil.rmtree(SESSION_TEMP_DIR)
+            logging.info(f"🛑 SESSÃO ENCERRADA (Normal): Pasta temporária excluída. Continha {qtd} arquivo(s): [{nomes}]")
         except Exception as e:
-            logging.error(f"Erro ao apagar a pasta de arquivos temporários: {e}")
+            logging.error(f"❌ Erro no encerramento ao apagar temporários da sessão: {e}")
+    else:
+        logging.info("🛑 SESSÃO ENCERRADA (Normal): Nenhum diretório temporário precisou ser limpo.")
 
-# Garante que a rotina seja executada quando o script for finalizado
-atexit.register(cleanup_temp_files)
+cleanup_old_temp_files()
+atexit.register(cleanup_current_session)
 
 # ==========================================
 # FUNÇÕES CORE DE PDF (SINCRONIZADAS COM A VERSÃO GRÁFICA)
 # ==========================================
 
-def clean_pdf_signatures(input_path: str) -> str:
-    """Remove assinaturas do PDF e salva em um diretório temporário."""
+def clean_pdf_signatures(input_path: str) -> tuple[str, dict]:
+    """Remove assinaturas do PDF e achata o visual, retornando o caminho e os status de limpeza."""
+    stats = {
+        "acroform_removed": False,
+        "perms_removed": False,
+        "sigflags_removed": False,
+        "widgets_flattened": 0,
+        "error": None
+    }
     try:
         original_name = os.path.basename(input_path)
-        temp_dir = os.path.join(tempfile.gettempdir(), 'pdf_editor_temp')
-        os.makedirs(temp_dir, exist_ok=True)
+        os.makedirs(SESSION_TEMP_DIR, exist_ok=True)
         
         unique_id = uuid.uuid4().hex[:8]
-        output_path = os.path.join(temp_dir, f"{unique_id}_{original_name}")
+        output_path = os.path.join(SESSION_TEMP_DIR, f"{unique_id}_{original_name}")
         
-        # FASE 1: Limpeza Visual e de Widgets com PyMuPDF
-        doc = fitz.open(input_path)
-        for page in doc:
-            widgets = page.widgets()
-            if widgets:
-                for w in widgets:
-                    ftype_str = str(getattr(w, 'field_type_string', '') or '').upper()
-                    if getattr(w, 'field_type', None) == fitz.PDF_WIDGET_TYPE_SIGNATURE or 'SIG' in ftype_str:
-                        page.delete_widget(w)
-        
-        temp_stream = io.BytesIO()
-        doc.save(temp_stream, garbage=4, deflate=True)
-        doc.close()
-        temp_stream.seek(0)
-        
-        # FASE 2: Expurgo Criptográfico com pypdf
-        reader = PdfReader(temp_stream)
+        reader = PdfReader(input_path)
         writer = PdfWriter()
+        
         for page in reader.pages:
             writer.add_page(page)
             
+        # 1. Destrói o registro global de formulários e segurança criptográfica
         for key in ["/AcroForm", "/Perms", "/SigFlags"]:
             if key in writer.root_object:
                 del writer.root_object[key]
+                if key == "/AcroForm": stats["acroform_removed"] = True
+                if key == "/Perms": stats["perms_removed"] = True
+                if key == "/SigFlags": stats["sigflags_removed"] = True
                 
+        # 2. Varrer anotações, achatar o visual da assinatura (Flattening) e remover o widget
+        for page in writer.pages:
+            if "/Annots" in page:
+                annots = page["/Annots"].get_object()
+                if isinstance(annots, list) or isinstance(annots, ArrayObject):
+                    new_annots = ArrayObject()
+                    
+                    for annot_ref in annots:
+                        try:
+                            annot = annot_ref.get_object()
+                            if annot.get("/Subtype") == "/Widget" and annot.get("/FT") == "/Sig":
+                                stats["widgets_flattened"] += 1
+                                ap = annot.get("/AP")
+                                if ap:
+                                    ap_obj = ap.get_object()
+                                    ap_n_ref = ap_obj.get("/N")
+                                    ap_n_obj = ap_n_ref.get_object() if ap_n_ref else None
+                                    
+                                    rect = annot.get("/Rect")
+                                    
+                                    if ap_n_obj and rect:
+                                        # Evita o erro de salvamento forçando um ponteiro indireto se não existir
+                                        if getattr(ap_n_ref, "indirect_reference", None) is None:
+                                            ap_n_ref = writer._add_object(ap_n_obj)
+                                        
+                                        # Calculando Escala e Translação exatas (BBox -> Rect)
+                                        rx0, ry0, rx1, ry1 = float(rect[0]), float(rect[1]), float(rect[2]), float(rect[3])
+                                        bbox = ap_n_obj.get("/BBox")
+                                        if bbox:
+                                            bx0, by0, bx1, by1 = float(bbox[0]), float(bbox[1]), float(bbox[2]), float(bbox[3])
+                                        else:
+                                            bx0, by0, bx1, by1 = 0.0, 0.0, rx1 - rx0, ry1 - ry0
+                                            
+                                        bw = bx1 - bx0
+                                        bh = by1 - by0
+                                        rw = rx1 - rx0
+                                        rh = ry1 - ry0
+                                        
+                                        sx = rw / bw if bw != 0 else 1.0
+                                        sy = rh / bh if bh != 0 else 1.0
+                                        tx = rx0 - (bx0 * sx)
+                                        ty = ry0 - (by0 * sy)
+                                        
+                                        # Registra a imagem nos recursos da página
+                                        resources = page.get("/Resources", DictionaryObject()).get_object()
+                                        if "/Resources" not in page:
+                                            page[NameObject("/Resources")] = resources
+                                            
+                                        xobjects = resources.get("/XObject", DictionaryObject()).get_object()
+                                        if "/XObject" not in resources:
+                                            resources[NameObject("/XObject")] = xobjects
+                                            
+                                        xobj_name = NameObject(f"/FmSig_{uuid.uuid4().hex[:6]}")
+                                        xobjects[xobj_name] = ap_n_ref
+                                        
+                                        # Cria o bloco de isolamento final com cálculo de matriz completo
+                                        content_str = f"\nQ\nq {sx} 0 0 {sy} {tx} {ty} cm {xobj_name} Do Q\n".encode("utf-8")
+                                        
+                                        contents = page.get("/Contents")
+                                        if contents:
+                                            contents_obj = contents.get_object()
+                                            
+                                            # Manipulação limpa que encapsula o stream original sem quebrar matrizes
+                                            if isinstance(contents_obj, ArrayObject):
+                                                first_stream = contents_obj[0].get_object()
+                                                last_stream = contents_obj[-1].get_object()
+                                                
+                                                if hasattr(first_stream, "get_data"):
+                                                    first_stream.set_data(b"q\n" + first_stream.get_data())
+                                                else:
+                                                    first_stream._data = b"q\n" + first_stream._data
+                                                    
+                                                if hasattr(last_stream, "get_data"):
+                                                    last_stream.set_data(last_stream.get_data() + content_str)
+                                                else:
+                                                    last_stream._data += content_str
+                                            else:
+                                                target_stream = contents_obj
+                                                if hasattr(target_stream, "get_data"):
+                                                    target_stream.set_data(b"q\n" + target_stream.get_data() + content_str)
+                                                else:
+                                                    target_stream._data = b"q\n" + target_stream._data + content_str
+                                        else:
+                                            # Trata páginas puramente em branco
+                                            new_stream = StreamObject()
+                                            content_only = f"\nq {sx} 0 0 {sy} {tx} {ty} cm {xobj_name} Do Q\n".encode("utf-8")
+                                            if hasattr(new_stream, "set_data"):
+                                                new_stream.set_data(content_only)
+                                            else:
+                                                new_stream._data = content_only
+                                            page[NameObject("/Contents")] = writer._add_object(new_stream)
+                                            
+                                # O Widget de Assinatura não é mais incluído. Restará só a imagem achatada nativamente.
+                            else:
+                                new_annots.append(annot_ref)
+                        except Exception:
+                            new_annots.append(annot_ref)
+                            
+                    if len(new_annots) > 0:
+                        page[NameObject("/Annots")] = new_annots
+                    else:
+                        if "/Annots" in page:
+                            del page["/Annots"]
+                        
         with open(output_path, "wb") as f:
             writer.write(f)
             
-        return output_path
+        return output_path, stats
     except Exception as e:
         logging.error(f"Erro na limpeza de assinatura do arquivo {input_path}: {e}")
-        return input_path
+        stats["error"] = str(e)
+        return input_path, stats
 
 def get_display_name(filepath: str) -> str:
     """Remove o prefixo UUID (se existir) para exibir o nome original na interface."""
@@ -613,16 +774,30 @@ def detect_signed_pages_in_pdf(pdf_path: str) -> set[int]:
                 except Exception:
                     return None
 
-            def _iter_fields(field_refs):
+            def _iter_fields(field_refs, visited=None):
+                if visited is None:
+                    visited = set()
+                
                 for fref in field_refs or []:
                     try:
+                        ref_id = None
+                        if hasattr(fref, "indirect_reference"):
+                            ref_id = (fref.indirect_reference.idnum, fref.indirect_reference.generation)
+                        
+                        if ref_id:
+                            if ref_id in visited:
+                                continue
+                            visited.add(ref_id)
+                            
                         fobj = fref.get_object()
                     except Exception:
                         continue
+                        
                     if not isinstance(fobj, dict):
                         continue
+                        
                     yield fobj
-                    for kid in _iter_fields(fobj.get("/Kids", [])):
+                    for kid in _iter_fields(fobj.get("/Kids", []), visited):
                         yield kid
 
             root = reader.trailer.get("/Root", {})
@@ -872,7 +1047,7 @@ def navigate_and_choose_directory(start_dir="."):
         os.system('clear' if os.name == 'posix' else 'cls')
         
         CONSOLE.print(Panel("[bold cyan]SELECIONE A PASTA DE DESTINO[/bold cyan]", border_style="cyan"))
-        CONSOLE.print(f"📂 [bold yellow]Pasta atual:[/bold yellow] [dim]{current_dir}[/dim]\n")
+        CONSOLE.print(f"📂 [bold yellow]Pasta atual:[/bold yellow] [dim]{current_dir}[/dim]\n", highlight=False)
         
         try:
             items = sorted(os.listdir(current_dir))
@@ -969,7 +1144,7 @@ class TermuxPDFEditor:
     def display_header(self):
         self.clear_screen()
         CONSOLE.print(Panel(
-            "[bold cyan]EDITOR DE PDF PARA E-DOCS[/bold cyan]",
+            "[bold cyan]EDITOR DE PDF PARA E-DOCS | V1.0.13 | 14/09/2026[/bold cyan]",
             border_style="bold blue",
             padding=(0, 2)
         ))
@@ -989,15 +1164,12 @@ class TermuxPDFEditor:
         table.add_row("[4]", "❌ Remover Páginas")
         table.add_row("[5]", "🧹 Limpar Tudo")
         table.add_row("[6]", "💾 Salvar PDF")
+        table.add_row("[7]", "🐛 Depuração")
         
         CONSOLE.print(Panel(table, title="[bold yellow]MENU PRINCIPAL[/bold yellow]", border_style="dim white"))
         CONSOLE.print("\n[bold red][Q + ENTER] Sair do sistema[/bold red]")
 
     def run(self):
-        if not PYMUPDF_AVAILABLE or not PYPDF_AVAILABLE:
-            print("\n[AVISO] Bibliotecas essenciais ausentes. O script pode falhar.")
-            input("Pressione ENTER para continuar mesmo assim...")
-
         while True:
             self.display_header()
             CONSOLE.print(f"Páginas na fila: [bold green]{len(self.pages_ordered)}[/bold green]\n")
@@ -1024,11 +1196,13 @@ class TermuxPDFEditor:
             elif choice == '4':
                 self.remove_page()
             elif choice == '5':
+                logging.info(f"🗑️ LIMPAR TUDO: Usuário esvaziou a fila (Total removido: {len(self.pages_ordered)}).")
                 self.pages_ordered.clear()
                 self.pages_with_edocs.clear()
                 self.pages_with_signed_mark.clear()
                 while True:
-                    self.display_header()
+                    self.clear_screen()
+                    CONSOLE.print(Panel("[bold cyan]LIMPAR TODAS AS PÁGINAS[/bold cyan]", border_style="cyan"))
                     CONSOLE.print("\n[bold green][OK] Todos os documentos foram removidos com sucesso.[/bold green]")
                     CONSOLE.print("\n[bold red][Q + ENTER] Voltar[/bold red]")
                     inp = input("\nEscolha uma opção: ").strip()
@@ -1037,6 +1211,8 @@ class TermuxPDFEditor:
                         break
             elif choice == '6':
                 self.merge_and_save()
+            elif choice == '7':
+                self.view_logs()
             elif choice == '0' or choice == '\x1b' or choice.lower() == 'q':
                 self.clear_screen()
                 break
@@ -1048,7 +1224,7 @@ class TermuxPDFEditor:
         while True:
             self.clear_screen()
             CONSOLE.print(Panel("[bold cyan]ADICIONAR ARQUIVOS PDF[/bold cyan]", border_style="cyan"))
-            CONSOLE.print(f"📂 [bold yellow]Pasta atual:[/bold yellow] [dim]{current_dir}[/dim]\n")
+            CONSOLE.print(f"📂 [bold yellow]Pasta atual:[/bold yellow] [dim]{current_dir}[/dim]\n", highlight=False)
             
             try:
                 items = sorted(os.listdir(current_dir))
@@ -1122,25 +1298,75 @@ class TermuxPDFEditor:
                     continue
 
             if selected_pdf:
-                CONSOLE.print(f"\n[cyan]Processando arquivo:[/cyan] {os.path.basename(selected_pdf)} ...")
-                    
                 try:
-                    pdf_path = clean_pdf_signatures(selected_pdf)
-                    doc = fitz.open(pdf_path)
-                    edocs_pages = detect_edocs_pages_in_pdf(pdf_path)
-                    signed_pages = detect_signed_pages_in_pdf(pdf_path)
-                    
-                    for pno in range(doc.page_count):
-                        self.pages_ordered.append((pdf_path, pno))
-                        if pno in edocs_pages:
-                            self.pages_with_edocs.add((pdf_path, pno))
-                        if pno in signed_pages:
-                            self.pages_with_signed_mark.add((pdf_path, pno))
-                    
-                    doc.close()
-                    status_history.append(f"[bold green][OK] PDF adicionado: {os.path.basename(selected_pdf)}. E-DOCS: {len(edocs_pages)} | Assinaturas: {len(signed_pages)}[/bold green]")
+                    tamanho_mb = os.path.getsize(selected_pdf) / (1024 * 1024)
+                    logging.info(f"📥 CARREGANDO PDF: '{os.path.basename(selected_pdf)}' | Tamanho: {tamanho_mb:.2f} MB | Caminho: {selected_pdf}")
                 except Exception as e:
-                    status_history.append(f"[bold red][ERRO] Falha ao processar o arquivo: {e}[/bold red]")
+                    logging.warning(f"⚠️ Aviso: Falha ao tentar obter tamanho de '{selected_pdf}': {e}")
+
+                with CONSOLE.status(f"[cyan]Processando arquivo:[/cyan] {os.path.basename(selected_pdf)}", spinner="line"):
+                    
+                    try:
+                        pdf_path, clean_stats = clean_pdf_signatures(selected_pdf)
+                        doc = fitz.open(pdf_path)
+                        edocs_pages = detect_edocs_pages_in_pdf(pdf_path)
+                        signed_pages = detect_signed_pages_in_pdf(pdf_path)
+                        
+                        total_paginas = doc.page_count
+                        
+                        for pno in range(total_paginas):
+                            self.pages_ordered.append((pdf_path, pno))
+                            if pno in edocs_pages:
+                                self.pages_with_edocs.add((pdf_path, pno))
+                            if pno in signed_pages:
+                                self.pages_with_signed_mark.add((pdf_path, pno))
+                    
+                        doc.close()
+
+                        if clean_stats.get("error"):
+                            logging.error(f"❌ Erro na limpeza prévia do arquivo: {clean_stats['error']}")
+                        else:
+                            acoes_limpeza = []
+                            if clean_stats.get("acroform_removed"): acoes_limpeza.append("AcroForm removido")
+                            if clean_stats.get("perms_removed"): acoes_limpeza.append("Permissões removidas")
+                            if clean_stats.get("sigflags_removed"): acoes_limpeza.append("SigFlags removidos")
+                            if clean_stats.get("widgets_flattened", 0) > 0: acoes_limpeza.append(f"{clean_stats['widgets_flattened']} widget(s) achatado(s)")
+                            
+                            if acoes_limpeza:
+                                logging.info(f"🧹 PRÉ-PROCESSAMENTO APLICADO: {' | '.join(acoes_limpeza)}")
+                                
+                        logging.info(f"✅ PROCESSAMENTO CONCLUÍDO: '{os.path.basename(selected_pdf)}' | Páginas lidas: {total_paginas} | Bordas E-Docs identificadas: {len(edocs_pages)} | Assinaturas restantes identificadas: {len(signed_pages)}")
+                        
+                        base_msg = (
+                            f"[bold green][OK] PDF adicionado:[/bold green]\n"
+                            f"[white]{os.path.basename(selected_pdf)}[/white]"
+                        )
+                    
+                        limpeza_msg = ""
+                        if clean_stats.get("error"):
+                            limpeza_msg = f"\n[bold yellow]Aviso no pré-tratamento:[/bold yellow] {clean_stats['error']}"
+                        elif any([clean_stats["acroform_removed"], clean_stats["perms_removed"], clean_stats["sigflags_removed"], clean_stats["widgets_flattened"] > 0]):
+                            details = []
+                            if clean_stats["acroform_removed"]: details.append("AcroForm")
+                            if clean_stats["perms_removed"]: details.append("Permissões")
+                            if clean_stats["sigflags_removed"]: details.append("SigFlags")
+                        
+                            msg_parts = []
+                            if details:
+                                msg_parts.append(f"Removidos: {', '.join(details)}")
+                            if clean_stats["widgets_flattened"] > 0:
+                                msg_parts.append(f"Widgets achatados: {clean_stats['widgets_flattened']}")
+                            
+                            limpeza_msg = f"\n[dim]Limpeza pré-importação: {' | '.join(msg_parts)}[/dim]"
+                    
+                        # Trata o contador de E-DOCS e Assinaturas (fica no final)
+                        edocs_msg = f"\n[dim]Borda E-Docs: {len(edocs_pages)} | Assinaturas residuais: {len(signed_pages)}[/dim]"
+                    
+                        # Concatena tudo na ordem correta
+                        status_history.append(base_msg + limpeza_msg + edocs_msg)
+
+                    except Exception as e:
+                        status_history.append(f"[bold red][ERRO] Falha ao processar o arquivo: {e}[/bold red]")
 
     def list_pages(self, title="ORDENAÇÃO ATUAL DAS PÁGINAS"):
         self.clear_screen()
@@ -1208,6 +1434,7 @@ class TermuxPDFEditor:
                 if dst > len(remaining): dst = len(remaining)
                 
                 self.pages_ordered = remaining[:dst] + items_to_move + remaining[dst:]
+                logging.info(f"🔀 REORDENAR PÁGINAS: Usuário moveu {len(items_to_move)} página(s) da(s) origem(ns) {src_indices} para o destino {dst}.")
                 status_history = [f"[bold green][OK][/bold green] {len(items_to_move)} página(s) movida(s) para a posição [{dst}]."]
             except ValueError:
                 status_history = ["[bold red][ERRO][/bold red] Posição de destino inválida."]
@@ -1240,13 +1467,14 @@ class TermuxPDFEditor:
                     path, pno = self.pages_ordered.pop(idx)
                     self.pages_with_edocs.discard((path, pno))
                     self.pages_with_signed_mark.discard((path, pno))
-                    
+                logging.info(f"❌ REMOVER PÁGINAS: Usuário removeu {len(indices)} página(s). Índices alvo: {indices}")
                 status_history = [f"[bold green][OK][/bold green] {len(indices)} página(s) removida(s) com sucesso."]
-
+                
     def merge_and_save(self):
         if not self.pages_ordered:
             while True:
-                self.display_header()
+                self.clear_screen()
+                CONSOLE.print(Panel("[bold cyan]SALVAR E EXPORTAR PDF[/bold cyan]", border_style="cyan"))
                 CONSOLE.print("\n[bold red][ERRO] Nenhuma página carregada para salvar.[/bold red]")
                 CONSOLE.print("\n[bold red][Q + ENTER] Voltar[/bold red]")
                 inp = input("\nEscolha uma opção: ").strip()
@@ -1259,8 +1487,9 @@ class TermuxPDFEditor:
             
         status_history = []
         while True:
-            self.display_header()
-            CONSOLE.print(f"📂 [bold yellow]Pasta selecionada:[/bold yellow] [dim]{chosen_dir}[/dim]")
+            self.clear_screen()
+            CONSOLE.print(Panel("[bold cyan]SELECIONE O NOME DO ARQUIVO[/bold cyan]", border_style="cyan"))
+            CONSOLE.print(f"📂 [bold yellow]Pasta selecionada:[/bold yellow] [dim]{chosen_dir}[/dim]", highlight=False)
             
             if status_history:
                 CONSOLE.print()
@@ -1282,70 +1511,145 @@ class TermuxPDFEditor:
                 
             out_path = os.path.join(chosen_dir, filename)
                 
-            CONSOLE.print(f"\n[cyan]Processando documento e gerando:[/cyan] {filename} ...")
+            with CONSOLE.status(f"[cyan]Processando e gerando documento:[/cyan] {filename}", spinner="line"):
+                writer = PdfWriter()
+                edocs_count = 0
+                signed_count = 0
                 
-            writer = PdfWriter()
-            edocs_count = 0
-            signed_count = 0
+                alive_buffers = []
+                
+                try:
+                    logging.info(f"🔄 EXPORTAÇÃO INICIADA: Preparando {len(self.pages_ordered)} página(s) para o arquivo '{filename}'.")
+                    for file_path, pno in self.pages_ordered:
+                        key = (file_path, pno)
+                        if PYMUPDF_AVAILABLE and key in self.pages_with_signed_mark:
+                            with fitz.open(file_path) as src:
+                                page0 = src.load_page(pno)
+                                image_only_pdf = build_single_page_image_pdf_bytes(page0, dpi=300)
+                                
+                                buf = io.BytesIO(image_only_pdf)
+                                alive_buffers.append(buf)
+                                writer.append(buf)
+                                signed_count += 1
+                                
+                        elif PYMUPDF_AVAILABLE and key in self.pages_with_edocs:
+                            with fitz.open(file_path) as src:
+                                with fitz.open() as single:
+                                    single.insert_pdf(src, from_page=pno, to_page=pno)
+                                    single.del_xml_metadata()
+                                
+                                    if shift_edocs_stamp_left_in_page(single[0], dx_pts=EDOCS_SHIFT_LEFT_PTS):
+                                        edocs_count += 1
+                                
+                                    buf = io.BytesIO()
+                                    single.save(buf, garbage=4, deflate=True, clean=True, expand=255, pretty=False, no_new_id=True)
+                                    buf.seek(0)
+                                    
+                                    alive_buffers.append(buf)
+                                    writer.append(buf)
+                            
+                        else:
+                            writer.append(file_path, pages=(pno, pno + 1))
+                        
+                    writer.add_metadata({
+                        '/Creator': 'Scanner', 
+                        '/Producer': 'Generic',
+                        '/Author': '',
+                        '/Title': ''
+                    })
+                    writer._ID = None
+
+                    logging.info("⏳ Processamento das páginas concluído. Montando o PDF final na memória (RAM)...")
+                    
+                    final_pdf_buffer = io.BytesIO()
+                    writer.write(final_pdf_buffer)
+
+                    tamanho_final_mb = final_pdf_buffer.getbuffer().nbytes / (1024 * 1024)
+                    logging.info(f"💾 GRAVANDO NO DISCO: Escrevendo {tamanho_final_mb:.2f} MB no arquivo '{out_path}'.")
+                    
+                    with open(out_path, 'wb') as f:
+                        f.write(final_pdf_buffer.getvalue())
+                        logging.info(f"✅ EXPORTAÇÃO CONCLUÍDA: Bordas E-Docs ajustadas: {edocs_count} | Assinaturas rasterizadas: {signed_count}")
+                
+                except Exception as e:
+                    logging.error(f"❌ ERRO FATAL NA EXPORTAÇÃO: Falha ao salvar '{filename}': {e}", exc_info=True)
+                    status_history = [f"[bold red][ERRO][/bold red] Falha ao salvar: {e}"]
+                    continue
+                finally:
+                    alive_buffers.clear()
+                    
+            while True:
+                self.clear_screen()
+                CONSOLE.print(Panel("[bold cyan]SALVAR E EXPORTAR PDF[/bold cyan]", border_style="cyan"))
+                CONSOLE.print(f"📂 [bold yellow]Pasta selecionada:[/bold yellow] [dim]{chosen_dir}[/dim]\n", highlight=False)
+                CONSOLE.print(f"[bold green][SUCESSO][/bold green] PDF salvo em: [cyan]{out_path}[/cyan]", highlight=False)
+                CONSOLE.print(f"-> E-DOCS reajustados: [bold white]{edocs_count}[/bold white]")
+                CONSOLE.print(f"-> Assinaturas rasterizadas: [bold white]{signed_count}[/bold white]")
+                CONSOLE.print("\n[bold red][Q + ENTER] Voltar[/bold red]")
+                    
+                inp = input("\nEscolha uma opção: ").strip()
+                        
+                if inp == '\x1b' or inp.lower() == 'q':
+                    return
+    def view_logs(self):
+        status = []
+        while True:
+            self.clear_screen()
+            CONSOLE.print(Panel("[bold cyan]DIAGNÓSTICO E LOGS DA SESSÃO[/bold cyan]", border_style="cyan"))
             
             try:
-                for file_path, pno in self.pages_ordered:
-                    key = (file_path, pno)
-                    if PYMUPDF_AVAILABLE and key in self.pages_with_signed_mark:
-                        src = fitz.open(file_path)
-                        page0 = src.load_page(pno)
-                        image_only_pdf = build_single_page_image_pdf_bytes(page0, dpi=300)
-                        writer.append(io.BytesIO(image_only_pdf))
-                        signed_count += 1
-                        src.close()
-                    elif PYMUPDF_AVAILABLE and key in self.pages_with_edocs:
-                        src = fitz.open(file_path)
-                        single = fitz.open()
-                        single.insert_pdf(src, from_page=pno, to_page=pno)
-                        
-                        # Limpa metadados internos da página
-                        single.del_xml_metadata()
-                        
-                        if shift_edocs_stamp_left_in_page(single[0], dx_pts=EDOCS_SHIFT_LEFT_PTS):
-                            edocs_count += 1
-                        
-                        buf = io.BytesIO()
-                        single.save(buf, garbage=4, deflate=True, clean=True, expand=255, pretty=False, no_new_id=True)
-                        buf.seek(0)
-                        writer.append(buf)
-                        single.close()
-                        src.close()
-                    else:
-                        writer.append(file_path, pages=(pno, pno + 1))
-                        
-                writer.add_metadata({
-                    '/Creator': 'Scanner', 
-                    '/Producer': 'Generic',
-                    '/Author': '',
-                    '/Title': ''
-                })
-                # Remove qualquer vestígio de histórico de IDs para conformidade com a versão gráfica
-                writer._ID = None
-                
-                with open(out_path, 'wb') as f:
-                    writer.write(f)
-                    
-                while True:
-                    self.display_header()
-                    CONSOLE.print(f"📂 [bold yellow]Pasta selecionada:[/bold yellow] [dim]{chosen_dir}[/dim]\n")
-                    CONSOLE.print(f"[bold green][SUCESSO][/bold green] PDF salvo em: [cyan]{out_path}[/cyan]")
-                    CONSOLE.print(f"-> E-DOCS reajustados: [bold white]{edocs_count}[/bold white]")
-                    CONSOLE.print(f"-> Assinaturas rasterizadas: [bold white]{signed_count}[/bold white]")
-                    CONSOLE.print("\n[bold red][Q + ENTER] Voltar[/bold red]")
-                    
-                    inp = input("\nEscolha uma opção: ").strip()
-                        
-                    if inp == '\x1b' or inp.lower() == 'q':
-                        return
+                log_files = [f for f in os.listdir(LOG_BASE_DIR) if f.endswith('.txt')]
+                total_logs = len(log_files)
+            except Exception:
+                total_logs = 0
 
-            except Exception as e:
-                status_history = [f"[bold red][ERRO][/bold red] Falha ao salvar: {e}"]
-                continue
+            try:
+                with open(LOG_FILE, "r", encoding="utf-8") as f:
+                    logs = f.readlines()
+            except FileNotFoundError:
+                logs = []
+
+            if not logs:
+                CONSOLE.print("\n[dim]A sessão atual ainda não gerou nenhum registro.[/dim]")
+            else:
+                CONSOLE.print(f"\n[bold yellow]Últimos registros da sessão atual ({SESSION_ID}):[/bold yellow]\n")
+                for line in logs[-20:]:
+                    line = line.strip()
+                    if "ERROR" in line or "CRITICAL" in line:
+                        CONSOLE.print(f"[bold red]{line}[/bold red]")
+                    elif "WARNING" in line:
+                        CONSOLE.print(f"[bold yellow]{line}[/bold yellow]")
+                    elif "INFO" in line:
+                        CONSOLE.print(f"[cyan]{line}[/cyan]")
+                    else:
+                        CONSOLE.print(f"[dim]{line}[/dim]")
+            
+            CONSOLE.print("\n" + "─" * 45)
+            CONSOLE.print(f"📦 Há um total de [bold white]{total_logs}[/bold white] arquivo(s) de log no sistema.")
+            
+            if status:
+                CONSOLE.print()
+                for st in status: CONSOLE.print(st)
+                status.clear()
+
+            CONSOLE.print("\n[bold red][Q + ENTER][/bold red] Voltar  |  [bold red][X + ENTER][/bold red] Apagar histórico antigo")
+            inp = input("\nEscolha uma opção: ").strip().lower()
+
+            if inp == 'q' or inp == '\x1b':
+                break
+            elif inp == 'x':
+                deleted = 0
+                try:
+                    for f in os.listdir(LOG_BASE_DIR):
+                        file_path = os.path.join(LOG_BASE_DIR, f)
+                        if os.path.isfile(file_path) and file_path != LOG_FILE:
+                            os.remove(file_path)
+                            deleted += 1
+                    status = [f"[bold green][OK][/bold green] {deleted} arquivo(s) de log antigo(s) apagado(s)."]
+                    logging.info(f"Limpeza de log executada. {deleted} arquivos removidos.")
+                except Exception as e:
+                    status = [f"[bold red][ERRO][/bold red] Falha ao apagar logs: {e}"]
+                    logging.error(f"Erro ao limpar logs antigos: {e}")
 
 if __name__ == '__main__':
     app = TermuxPDFEditor()
