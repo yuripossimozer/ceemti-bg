@@ -247,7 +247,7 @@
                         
                         <div class="d-flex justify-content-center gap-2 mb-2">
                             <span id="versao-${index}" class="badge badge-versao rounded-pill">Buscando</span>
-                            <span class="badge bg-secondary rounded-pill">${item.tipo_linguagem}</span>
+                            <span id="tipo-${index}" class="badge bg-secondary rounded-pill">Detectando</span>
                         </div>
                         
                         <p class="small text-secondary mb-3">${item.desc}</p>
@@ -282,6 +282,28 @@
         return 'v?'; 
     }
 
+    // Função auxiliar para descobrir a linguagem pela extensão
+    function obterTipoPorExtensao(caminho) {
+        // Remove parâmetros de URL (ex: script.py?v=123) e pega o que vem após o último ponto
+        const match = caminho.split('?')[0].match(/\.([^.]+)$/);
+        if (!match) return 'Desconhecido';
+    
+        const ext = match[1].toLowerCase();
+        const mapaTipos = {
+            'py': 'Python',
+            'ps1': 'PowerShell',
+            'bat': 'Batch',
+            'cmd': 'Batch',
+            'sh': 'Shell Script',
+            'js': 'JavaScript',
+            'ahk': 'AutoHotkey',
+            'vbs': 'VBScript'
+        };
+    
+        // Retorna a linguagem mapeada ou a própria extensão em maiúsculo (ex: EXE, PDF)
+        return mapaTipos[ext] || ext.toUpperCase();
+    }
+  
     async function baixarEProcessarScript(item, index) {
         const caminho = GITHUB_PATH ? `${GITHUB_PATH}/` : '';
         const url = `https://raw.githubusercontent.com/${GITHUB_USER}/${GITHUB_REPO}/${GITHUB_BRANCH}/${caminho}${item.arquivo}?v=` + new Date().getTime();
@@ -295,18 +317,24 @@
             const btn = document.getElementById(`btn-${index}`);
             const status = document.getElementById(`status-${index}`);
             const chipVersao = document.getElementById(`versao-${index}`);
+            const chipTipo = document.getElementById(`tipo-${index}`);
             
-            // --- LÓGICA DE VERSÃO DINÂMICA ---
+            // --- LÓGICA DE VERSÃO E TIPO DINÂMICOS ---
             if (item.tipo_execucao === 'script') {
                 chipVersao.innerText = extrairVersao(textoScript);
+                chipTipo.innerText = obterTipoPorExtensao(item.arquivo);
             } 
             else if (item.tipo_execucao === 'launcher') {
                 const urlMatch = textoScript.match(/URL_SCRIPT\s*=\s*['"]([^'"]+)['"]/i);
                 
                 if (urlMatch && urlMatch[1]) {
-                    const urlReal = urlMatch[1] + '?v=' + new Date().getTime();
+                    const urlReal = urlMatch[1];
+                    
+                    chipTipo.innerText = obterTipoPorExtensao(urlReal); 
+                    
+                    const urlFetchReal = urlReal + '?v=' + new Date().getTime();
                     try {
-                        const responseReal = await fetch(urlReal);
+                        const responseReal = await fetch(urlFetchReal);
                         if (responseReal.ok) {
                             const textoReal = await responseReal.text();
                             chipVersao.innerText = extrairVersao(textoReal);
@@ -318,6 +346,7 @@
                     }
                 } else {
                     chipVersao.innerText = 'v? (Sem URL)';
+                    chipTipo.innerText = 'Desconhecido'; // Caso falhe, define o tipo como desconhecido
                 }
             }
 
