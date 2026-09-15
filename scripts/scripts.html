@@ -16,7 +16,6 @@
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
 
   <script>
-    // Previne flash de tema claro ao carregar
     (function() {
       try {
         const savedTheme = localStorage.getItem('theme');
@@ -30,7 +29,6 @@
   </script>
 
   <style>
-    /* VARIÁVEIS & TEMA */
     :root {
       --primary: #005fa4;
       --on-primary: #ffffff;
@@ -63,7 +61,6 @@
       --text-secondary: #c4c7c5;
     }
 
-    /* ESTRUTURA */
     body {
       width: 100%;
       min-height: 100dvh;
@@ -74,7 +71,6 @@
       padding-bottom: 60px;
     }
 
-    /* COMPONENTES */
     .app-bar {
       background-color: var(--surface-container);
       padding: 1rem 1.5rem;
@@ -140,7 +136,6 @@
     }
     a.btn-icon:hover { color: var(--on-primary-container); }
 
-    /* ESPECÍFICOS */
     .script-icon {
       width: 48px;
       height: 48px;
@@ -224,7 +219,7 @@
         { 
             arquivo: 'launcher_e-docs_pdf_merge_terminal.py', 
             titulo: 'E-DOCS PDF MERGE', 
-            desc: 'Ajusta carimbo lateral E-Docs e remove assinaturas eletrônicas, permitindo mesclar documentos para re-envio ao sistema.', 
+            desc: 'Ajusta carimbo lateral E-Docs e remove assinaturas eletrônicas, permitindo mesclar documentos para reenvio ao sistema.', 
             icon: 'fa-file',
             tipo_linguagem: 'Python',
             tipo_execucao: 'launcher' 
@@ -265,15 +260,12 @@
         });
     }
 
-    // Função auxiliar para encontrar a variável VERSION no meio do código
     function extrairVersao(textoCode) {
-        // Procura por algo como VERSION = 1.0.14, VERSION="1.0.14", version = '1.0'
         const regex = /VERSION\s*=\s*['"]?([^'"\s\r\n]+)['"]?/i; 
         const match = textoCode.match(regex);
         
         if (match && match[1]) {
             let ver = match[1];
-            // Adiciona um 'v' na frente caso o valor extraído seja apenas números (ex: 1.0.14 -> v1.0.14)
             if (!ver.toLowerCase().startsWith('v')) {
                 ver = 'v' + ver;
             }
@@ -282,9 +274,7 @@
         return 'v?'; 
     }
 
-    // Função auxiliar para descobrir a linguagem pela extensão
     function obterTipoPorExtensao(caminho) {
-        // Remove parâmetros de URL (ex: script.py?v=123) e pega o que vem após o último ponto
         const match = caminho.split('?')[0].match(/\.([^.]+)$/);
         if (!match) return 'Desconhecido';
     
@@ -300,7 +290,6 @@
             'vbs': 'VBScript'
         };
     
-        // Retorna a linguagem mapeada ou a própria extensão em maiúsculo (ex: EXE, PDF)
         return mapaTipos[ext] || ext.toUpperCase();
     }
   
@@ -318,8 +307,7 @@
             const status = document.getElementById(`status-${index}`);
             const chipVersao = document.getElementById(`versao-${index}`);
             const chipTipo = document.getElementById(`tipo-${index}`);
-            
-            // --- LÓGICA DE VERSÃO E TIPO DINÂMICOS ---
+
             if (item.tipo_execucao === 'script') {
                 chipVersao.innerText = extrairVersao(textoScript);
                 chipTipo.innerText = obterTipoPorExtensao(item.arquivo);
@@ -346,11 +334,10 @@
                     }
                 } else {
                     chipVersao.innerText = 'v? (Sem URL)';
-                    chipTipo.innerText = 'Desconhecido'; // Caso falhe, define o tipo como desconhecido
+                    chipTipo.innerText = 'Desconhecido';
                 }
             }
 
-            // --- LIBERAR O DOWNLOAD ---
             const blob = new Blob([textoScript], { type: 'text/plain' });
             const objectUrl = URL.createObjectURL(blob);
             
