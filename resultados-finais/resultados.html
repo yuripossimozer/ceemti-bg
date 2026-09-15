@@ -19,7 +19,6 @@
   <script>
     (function() {
       try {
-        // Aplica o tema salvo imediatamente
         const savedTheme = localStorage.getItem('theme');
         const metaTheme = document.getElementById('meta-theme-color');
         
@@ -28,10 +27,9 @@
           if (metaTheme) metaTheme.setAttribute('content', '#111315');
         }
 
-        // Verifica sessão ativa para evitar piscar a tela de login
         const token = localStorage.getItem('appEscolar_token');
         const lastActive = localStorage.getItem('appEscolar_lastActive');
-        const timeout = 25 * 60 * 1000; // 25 min
+        const timeout = 25 * 60 * 1000;
         
         if (token && lastActive && (Date.now() - parseInt(lastActive) < timeout)) {
           document.documentElement.setAttribute('data-session', 'active');
@@ -47,7 +45,6 @@
        VARIÁVEIS & TEMA
        ========================================= */
     :root {
-      /* Cores Light (Padrão) */
       --primary: #005fa4;
       --on-primary: #ffffff;
       --primary-container: #d5e3ff;
@@ -63,8 +60,6 @@
       --text-secondary: #3b3f46;
       --bg-header: #dfe4ec;
       --table-stripe: rgba(0, 95, 164, 0.04);
-      
-      /* Layout */
       --radius-card: 24px;
       --radius-btn: 100px;
       --shadow-sm: 0 1px 3px rgba(0,0,0,0.12), 0 1px 2px rgba(0,0,0,0.24);
@@ -72,7 +67,6 @@
     }
 
     [data-theme="dark"] {
-      /* Cores Dark */
       --primary: #a8c7fa;
       --on-primary: #00315b;
       --primary-container: #004786;
@@ -115,7 +109,6 @@
        COMPONENTES UI
        ========================================= */
        
-    /* Header & Cards */
     .app-bar {
       background-color: var(--surface-container);
       padding: 1rem 1.5rem;
@@ -141,7 +134,6 @@
       margin-bottom: 1.5rem;
     }
 
-    /* Tabelas */
     .table > tbody > tr > td {
       background-color: transparent !important;
       color: var(--text-main) !important;
@@ -166,7 +158,6 @@
       color: var(--on-primary-container) !important;
     }
     
-    /* Formulários */
     .form-label { 
       font-size: 0.85rem; 
       color: var(--text-secondary); 
@@ -188,7 +179,6 @@
       border-color: transparent; 
     }
 
-    /* Botões */
     .btn-icon {
       background: transparent; 
       border: none; 
@@ -252,7 +242,6 @@
     color: var(--on-primary-container) !important;
     }
 
-    /* Badges e Tags */
     .meta-tag {
       display: inline-flex; 
       align-items: center; 
@@ -269,7 +258,6 @@
       color: var(--primary); 
     }
 
-    /* Modais */
     .modal-content { 
       background-color: var(--surface-container); 
       color: var(--text-main); 
@@ -289,16 +277,15 @@
       filter: invert(1); 
     }
 
-    /* --- CHECKBOXES DA TABELA --- */
     .chk-container {
       display: flex;
       align-items: center;
       gap: 8px;
-      justify-content: center; /* Centraliza no cabeçalho */
+      justify-content: center;
     }
     
     .chk-container.start {
-      justify-content: flex-start; /* Alinha a esquerda nas disciplinas */
+      justify-content: flex-start;
     }
     
     .chk-container .form-check-input {
@@ -314,7 +301,6 @@
       border-color: var(--primary);
     }
 
-    /* --- CORREÇÃO GERAL: Checkboxes (Checked e Indeterminado) --- */
     .form-check-input:checked, 
     .form-check-input:indeterminate {
       background-color: var(--primary) !important;
@@ -326,7 +312,6 @@
       border-color: var(--primary);
     }    
     
-    /* --- DESTAQUE DE CÉLULA (MATRIZ DINÂMICA) --- */
     .table tbody td.highlight-cell {
       background-color: var(--primary-container) !important;
       color: var(--on-primary-container) !important;
@@ -361,13 +346,11 @@
       align-items: center;
     }
     
-    /* Controle de visibilidade baseado na sessão */
     html[data-session="active"] #login-screen { display: none !important; }
     html[data-session="active"] #overlay-loading { display: flex !important; }
     #app-container { display: none; padding-top: 1rem; }
     html[data-session="active"] #app-container { display: block !important; }
 
-    /* Placeholder rígido para evitar CLS do botão Google */
     .google-placeholder-rigid {
       width: 250px; 
       height: 44px;
@@ -419,7 +402,6 @@
        ========================================= -->
   <div class="container" id="app-container">
     
-    <!-- Cabeçalho / Barra de Ferramentas -->
     <div class="app-bar">
       <div class="d-flex align-items-center gap-2">
         <span class="app-title">RESULTADOS FINAIS</span>
@@ -437,7 +419,6 @@
       </div>
     </div>
 
-    <!-- Filtros de Busca -->
     <div class="m-card">
       <h5 class="mb-3" style="color: var(--text-secondary); font-weight: 700; font-size: 1.25rem;">FILTROS DE BUSCA</h5>
       <div class="row g-3">
@@ -462,7 +443,6 @@
       </div>
     </div>
 
-    <!-- Áreas de Resultados Dinâmicos -->
     <div id="resultadoArea"></div>
     <div id="areaNotas"></div>
   </div>
@@ -568,7 +548,6 @@
     const KEY_TOKEN = "appEscolar_token";
     const KEY_LAST_ACTIVE = "appEscolar_lastActive";
 
-    // Variáveis de Estado
     var USER_TOKEN = null;
     var DADOS_CACHE = {}; 
     var DADOS_RELATORIO_ATUAL = null; 
@@ -608,7 +587,6 @@
       }, 60 * 1000); 
     }
 
-    // Callback carregado pela lib do Google (async)
     window.onGoogleLibraryLoad = function() {
       tentarRenderizarBotao();
     };
@@ -654,13 +632,11 @@
        
        bsModal.show();
 
-       // Inicializa o Google
        google.accounts.id.initialize({
           client_id: CLIENT_ID_GOOGLE,
           callback: handleCredentialResponse,
        });
 
-       // Renderiza o botão
        if (window.google) {
            google.accounts.id.renderButton(
               document.getElementById("btn-google-renew-area"),
@@ -679,16 +655,13 @@
         document.getElementById('lblUserEmail').innerText = dadosUser.email;
       }
 
-      // Verifica se estávamos no fluxo de RENOVAÇÃO
       const modalRenovacaoEl = document.getElementById('modalRenovarSessao');
       const bsModal = bootstrap.Modal.getInstance(modalRenovacaoEl);
       if (bsModal && modalRenovacaoEl.classList.contains('show')) {
          bsModal.hide();
          
-         // RETOMA O MONITORAMENTO DE INATIVIDADE AQUI
          iniciarMonitoramentoInatividade();
          
-         // Feedback visual rápido avisando que pode tentar de novo
          const alerta = document.createElement('div');
          alerta.className = "alert alert-success position-fixed bottom-0 end-0 m-3";
          alerta.style.zIndex = "10000";
@@ -696,7 +669,6 @@
          document.body.appendChild(alerta);
          setTimeout(() => alerta.remove(), 4000);
 
-          // Atualiza a área principal (Cabeçalho) se ela estiver mostrando o aviso
           const area = document.getElementById('resultadoArea');
           if (area && area.innerHTML.includes('fa-user-clock')) {
               area.innerHTML = `
@@ -708,7 +680,6 @@
                   </div>`;
           }
           
-          // Atualiza a área de notas se a suspensão tiver ocorrido durante o carregamento delas
           const divNotas = document.getElementById('areaNotas');
           if (divNotas && divNotas.innerHTML.includes('fa-user-clock')) {
               divNotas.innerHTML = `
@@ -723,11 +694,9 @@
          return; 
       }
 
-      // Troca de Telas (Fluxo Normal)
       document.getElementById('login-screen').style.display = 'none';
       document.getElementById('overlay-loading').style.display = 'flex';
-      
-      // Carrega Dados Iniciais
+
       chamarAPI('getHierarquiaDados')
         .then(dados => {
           window.inicializarApp(dados);
@@ -757,12 +726,10 @@
       document.documentElement.removeAttribute('data-session');
       window.limparTela();
 
-      // Reseta dropdowns
       document.getElementById('selAno').innerHTML = '<option value="" selected disabled>Carregando...</option>';
       document.getElementById('selTurma').disabled = true;
       document.getElementById('selAluno').disabled = true;
 
-      // Troca telas
       document.getElementById('app-container').style.display = 'none';
       document.getElementById('login-screen').style.display = 'flex';
       
@@ -776,7 +743,6 @@
     // 3. INICIALIZAÇÃO DA PÁGINA
     // =========================================================
     window.onload = function() {
-      // Ajuste de ícone do tema
       try {
         if (document.documentElement.getAttribute('data-theme') === 'dark') {
            const icon = document.getElementById('icon-theme');
@@ -784,8 +750,7 @@
         }
         window.carregarConfig();
       } catch(e) {}
-      
-      // Se já estava logado, retoma
+
       if (verificarSessaoSalva()) {
         const dadosUser = parseJwt(USER_TOKEN);
         if (dadosUser?.email) {
@@ -798,7 +763,7 @@
         chamarAPI('getHierarquiaDados')
           .then(dados => {
             window.inicializarApp(dados);
-            document.documentElement.removeAttribute('data-session'); // Remove flag temporária
+            document.documentElement.removeAttribute('data-session');
             document.getElementById('overlay-loading').style.display = 'none';
             document.getElementById('app-container').style.display = 'block';
             iniciarMonitoramentoInatividade();
@@ -822,20 +787,25 @@
       atualizarAtividade();
       const bodyData = { userToken: USER_TOKEN, action: action, ...payload };
       
+      const payloadString = JSON.stringify(bodyData);
+      
+      const formData = new URLSearchParams();
+      formData.append('dados', payloadString);
+      
       const response = await fetch(API_URL, { 
         method: "POST", 
-        headers: { "Content-Type": "text/plain;charset=utf-8" }, 
-        body: JSON.stringify(bodyData) 
+        headers: { "Content-Type": "application/x-www-form-urlencoded" }, 
+        body: formData.toString() 
       });
       
       const responseText = await response.text();
       let json;
   
-  try {
-    json = JSON.parse(responseText);
-  } catch (err) {
-    throw new Error("Erro no formato da resposta da API. Tente novamente.");
-  }
+      try {
+        json = JSON.parse(responseText);
+      } catch (err) {
+        throw new Error("Erro no formato da resposta da API. Tente novamente.");
+      }
       
       if (json.error === "TOKEN_EXPIRED") {
          window.mostrarModalRenovacao('api');
@@ -846,7 +816,6 @@
       return json;
     }
 
-    // --- Animação de Cor (Meta Tag) ---
     function hexToRgb(hex) {
       const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
       return result ? { 
@@ -1004,8 +973,6 @@
       
       selAluno.disabled = false; 
     };
-
-    // --- Busca e Renderização ---
 
     window.buscarRelatorio = function() { 
       const ano = document.getElementById('selAno').value; 
