@@ -14,8 +14,8 @@ import time
 # CONFIGURAÇÃO DE DIAGNÓSTICO (LOGS)
 # ==========================================
 SESSION_ID = uuid.uuid4().hex[:8].upper()
-VERSION = '1.0.16'
-DT_VERSION = '15/09/2026'
+VERSION = '1.0.17'
+DT_VERSION = '16/09/2026'
 
 LOG_BASE_DIR = os.path.join(tempfile.gettempdir(), 'pdf_editor_edocs_logs')
 os.makedirs(LOG_BASE_DIR, exist_ok=True)
@@ -1586,7 +1586,7 @@ class TermuxPDFEditor:
                 CONSOLE.print(Panel("[bold cyan]SALVAR E EXPORTAR PDF[/bold cyan]", border_style="cyan"))
                 CONSOLE.print(f"📂 [bold yellow]Pasta selecionada:[/bold yellow] [dim]{chosen_dir}[/dim]\n", highlight=False)
                 CONSOLE.print(f"[bold green][SUCESSO][/bold green] PDF salvo em: [cyan]{out_path}[/cyan]", highlight=False)
-                CONSOLE.print(f"-> E-DOCS reajustados: [bold white]{edocs_count}[/bold white]")
+                CONSOLE.print(f"-> Bordas E-Docs reajustados: [bold white]{edocs_count}[/bold white]")
                 CONSOLE.print(f"-> Assinaturas rasterizadas: [bold white]{signed_count}[/bold white]")
                 CONSOLE.print("\n[bold red][Q + ENTER] Voltar[/bold red]")
                     
