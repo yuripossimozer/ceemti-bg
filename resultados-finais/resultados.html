@@ -792,7 +792,10 @@
       
       // 2. Ofuscação em Base64 (Garante que os logs de rede não mostrem dados em texto claro)
       // O uso do encodeURIComponent previne erros com acentuação (ç, ã, á) no Base64
-      const payloadCodificado = btoa(unescape(encodeURIComponent(jsonString)));
+      let payloadCodificado = btoa(unescape(encodeURIComponent(jsonString)));
+      // Torna o Base64 "URL-Safe" substituindo caracteres que quebram queries de rede
+      payloadCodificado = payloadCodificado.replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+
       
       // 3. Monta a URL para o método GET
       const params = new URLSearchParams({ 
