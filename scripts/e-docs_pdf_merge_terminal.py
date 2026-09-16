@@ -14,7 +14,7 @@ import time
 # CONFIGURAÇÃO DE DIAGNÓSTICO (LOGS)
 # ==========================================
 SESSION_ID = uuid.uuid4().hex[:8].upper()
-VERSION = '1.0.15'
+VERSION = '1.0.16'
 DT_VERSION = '15/09/2026'
 
 LOG_BASE_DIR = os.path.join(tempfile.gettempdir(), 'pdf_editor_edocs_logs')
@@ -1333,7 +1333,7 @@ class TermuxPDFEditor:
                             if clean_stats.get("acroform_removed"): acoes_limpeza.append("AcroForm removido")
                             if clean_stats.get("perms_removed"): acoes_limpeza.append("Permissões removidas")
                             if clean_stats.get("sigflags_removed"): acoes_limpeza.append("SigFlags removidos")
-                            if clean_stats.get("widgets_flattened", 0) > 0: acoes_limpeza.append(f"{clean_stats['widgets_flattened']} assinatura(s)/widget(s) achatado(s)")
+                            if clean_stats.get("widgets_flattened", 0) > 0: acoes_limpeza.append(f"{clean_stats['widgets_flattened']} Widget(s) achatado(s)")
                             
                             if acoes_limpeza:
                                 logging.info(f"🧹 PRÉ-PROCESSAMENTO APLICADO: {' | '.join(acoes_limpeza)}")
@@ -1358,9 +1358,9 @@ class TermuxPDFEditor:
                             if details:
                                 msg_parts.append(f"Removidos: {', '.join(details)}")
                             if clean_stats["widgets_flattened"] > 0:
-                                msg_parts.append(f"Assinaturas/Widgets achatados: {clean_stats['widgets_flattened']}")
+                                msg_parts.append(f"Assinaturas achatadas: {clean_stats['widgets_flattened']}")
                             
-                            limpeza_msg = f"\n[dim]Limpeza pré-importação: {' | '.join(msg_parts)}[/dim]"
+                            limpeza_msg = f"\n[dim]{' | '.join(msg_parts)}[/dim]"
                     
                         # Trata o contador de E-DOCS e Assinaturas (fica no final)
                         edocs_msg = f"\n[dim]Borda E-Docs: {len(edocs_pages)} | Assinaturas residuais: {len(signed_pages)}[/dim]"
