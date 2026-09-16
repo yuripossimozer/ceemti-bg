@@ -787,15 +787,24 @@
       atualizarAtividade();
       const bodyData = { userToken: USER_TOKEN, action: action, ...payload };
       
-      const payloadString = JSON.stringify(bodyData);
+      // 1. Transforma o objeto em String JSON
+      const jsonString = JSON.stringify(bodyData);
       
-      const formData = new URLSearchParams();
-      formData.append('dados', payloadString);
+      // 2. Ofuscação em Base64 (Garante que os logs de rede não mostrem dados em texto claro)
+      // O uso do encodeURIComponent previne erros com acentuação (ç, ã, á) no Base64
+      const payloadCodificado = btoa(unescape(encodeURIComponent(jsonString)));
       
-      const response = await fetch(API_URL, { 
-        method: "POST", 
-        headers: { "Content-Type": "application/x-www-form-urlencoded" }, 
-        body: formData.toString() 
+      // 3. Monta a URL para o método GET
+      const params = new URLSearchParams({ 
+        q: payloadCodificado,
+        t: Date.now() // Evita que o navegador guarde a requisição em cache
+      });
+      
+      const urlFinal = `${API_URL}?${params.toString()}`;
+      
+      const response = await fetch(urlFinal, { 
+        method: "GET",
+        headers: { "Accept": "application/json" }
       });
       
       const responseText = await response.text();
@@ -804,7 +813,7 @@
       try {
         json = JSON.parse(responseText);
       } catch (err) {
-        throw new Error("Erro no formato da resposta da API. Tente novamente.");
+        throw new Error("Erro de comunicação com o servidor. Tente novamente.");
       }
       
       if (json.error === "TOKEN_EXPIRED") {
@@ -815,7 +824,6 @@
       if (json.error) throw new Error(json.error);
       return json;
     }
-
     function hexToRgb(hex) {
       const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
       return result ? { 
