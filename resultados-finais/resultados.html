@@ -724,21 +724,18 @@
       }
 
       // Busca os dados iniciais do banco
-  try {
-    const { data: permData, error: permError } = await supabaseClient
-      .from('usuarios_permitidos')
-      .select('email');
-      
-    if (permError || !permData || permData.length === 0) {
-      throw new Error("Acesso negado. Seu e-mail não está na lista de usuários autorizados.");
-    }
-
-    const hierarquia = await buscarHierarquiaDados();
-    window.inicializarApp(hierarquia);
-    
       try {
+        const { data: permData, error: permError } = await supabaseClient
+          .from('usuarios_permitidos')
+          .select('email');
+      
+        if (permError || !permData || permData.length === 0) {
+          throw new Error("Acesso negado. Seu e-mail não está na lista de usuários autorizados.");
+        }
+
         const hierarquia = await buscarHierarquiaDados();
         window.inicializarApp(hierarquia);
+    
         document.getElementById('overlay-loading').style.display = 'none';
         document.getElementById('app-container').style.display = 'block';
         iniciarMonitoramentoInatividade();
