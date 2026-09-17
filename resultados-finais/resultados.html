@@ -731,13 +731,15 @@
         document.getElementById('app-container').style.display = 'block';
         iniciarMonitoramentoInatividade();
       } catch (e) {
+        console.error("Erro completo:", e);
         document.getElementById('overlay-loading').style.display = 'none';
         document.getElementById('login-screen').style.display = 'flex';
-        document.getElementById('login-error').innerText = "Erro ao carregar dados. Sem permissão."; 
+        // Aqui ele vai mostrar a mensagem real que vem do banco:
+        document.getElementById('login-error').innerText = "Erro do Banco: " + (e.message || JSON.stringify(e)); 
         window.fazerLogout();
       }
     }
-
+ 
     window.fazerLogout = async function() {
       await supabaseClient.auth.signOut();
       
@@ -802,6 +804,8 @@
           document.getElementById('app-container').style.display = 'block';
           iniciarMonitoramentoInatividade();
         } catch(e) {
+          console.error("Erro completo:", e);
+          document.getElementById('login-error').innerText = "Erro do Banco: " + (e.message || JSON.stringify(e));
           window.fazerLogout();
         }
       }
