@@ -15,6 +15,9 @@
   <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
   <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  
+  <!-- SUPABASE JS SDK -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
   <script>
     (function() {
@@ -505,7 +508,7 @@
           <i id="icone-renovacao" class="fas fa-hourglass-end fa-3x mb-3" style="color: #ffc107;"></i>
           <h5 id="titulo-renovacao" style="color: var(--text-main); font-weight: 700;">Sessão Expirada</h5>
           <p id="texto-renovacao" style="color: var(--text-secondary); font-size: 0.9rem;">
-            Por segurança, o Google encerra a sessão a cada 60 minutos. Clique abaixo para renovar o acesso sem perder seus dados na tela.
+            Por segurança, sua sessão expirou. Clique abaixo para renovar o acesso sem perder seus dados na tela.
           </p>
         </div>
         
@@ -527,8 +530,15 @@
 
   <script>
     // =========================================================
-    // 0. SEGURANÇA
+    // 0. SEGURANÇA E SUPABASE
     // =========================================================
+    
+    // --- PREENCHA SEUS DADOS DO SUPABASE AQUI ---
+    const SUPABASE_URL = "https://gtawjrszrzmuftzjoqyk.supabase.co";
+    const SUPABASE_ANON_KEY = "sb_publishable_k7C3tn6q8LaJrco8GSdQ7A_l2qJQxIb";
+    
+    const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
     window.escapeHTML = function(str) {
       if (!str) return "";
       return String(str)
@@ -542,7 +552,6 @@
     // =========================================================
     // 1. CONSTANTES E ESTADO GLOBAL
     // =========================================================
-    const API_URL = "https://script.google.com/macros/s/AKfycbwjuwuIUaREmo34IOVa4tOC1xiKwLw9ADwFQfsuoVsGUDR03eyRdTmwlWJqMH9lltJnYQ/exec";
     const CLIENT_ID_GOOGLE = "10938455862-2def58pdbq68jn5encbplrfl5nhcndpl.apps.googleusercontent.com"; 
     const SESSAO_TIMEOUT_MS = 25 * 60 * 1000; 
     const KEY_TOKEN = "appEscolar_token";
@@ -556,7 +565,7 @@
     var BOTAO_JA_RENDERIZADO = false;
 
     // =========================================================
-    // 2. GESTÃO DE SESSÃO & LOGIN GOOGLE
+    // 2. GESTÃO DE SESSÃO & LOGIN GOOGLE -> SUPABASE
     // =========================================================
     function verificarSessaoSalva() {
       const tokenSalvo = localStorage.getItem(KEY_TOKEN);
@@ -645,74 +654,65 @@
        }
     };
 
-    function handleCredentialResponse(response) {
+    // NOVA FUNÇÃO DE LOGIN: Usa o token do Google para logar no Supabase
+    async function handleCredentialResponse(response) {
+      document.getElementById('login-screen').style.display = 'none';
+      document.getElementById('overlay-loading').style.display = 'flex';
+      
+      const { data, error } = await supabaseClient.auth.signInWithIdToken({
+        provider: 'google',
+        token: response.credential,
+      });
+
+      if (error) {
+        document.getElementById('overlay-loading').style.display = 'none';
+        document.getElementById('login-screen').style.display = 'flex';
+        document.getElementById('login-error').innerText = "Erro no login: " + error.message; 
+        window.fazerLogout();
+        return;
+      }
+
       USER_TOKEN = response.credential;
       localStorage.setItem(KEY_TOKEN, USER_TOKEN);
       localStorage.setItem(KEY_LAST_ACTIVE, Date.now());
 
-      const dadosUser = parseJwt(USER_TOKEN);
-      if (dadosUser?.email) {
-        document.getElementById('lblUserEmail').innerText = dadosUser.email;
+      if (data.user?.email) {
+        document.getElementById('lblUserEmail').innerText = data.user.email;
       }
 
       const modalRenovacaoEl = document.getElementById('modalRenovarSessao');
       const bsModal = bootstrap.Modal.getInstance(modalRenovacaoEl);
       if (bsModal && modalRenovacaoEl.classList.contains('show')) {
          bsModal.hide();
-         
          iniciarMonitoramentoInatividade();
          
          const alerta = document.createElement('div');
          alerta.className = "alert alert-success position-fixed bottom-0 end-0 m-3";
          alerta.style.zIndex = "10000";
-         alerta.innerHTML = '<i class="fas fa-check-circle me-2"></i> Sessão renovada! Você já pode realizar a busca novamente.';
+         alerta.innerHTML = '<i class="fas fa-check-circle me-2"></i> Sessão renovada!';
          document.body.appendChild(alerta);
          setTimeout(() => alerta.remove(), 4000);
-
-          const area = document.getElementById('resultadoArea');
-          if (area && area.innerHTML.includes('fa-user-clock')) {
-              area.innerHTML = `
-                  <div class="text-center p-5">
-                      <i class="fas fa-check-circle fa-2x text-success mb-3"></i>
-                      <p class="small mb-0" style="color: var(--text-secondary);">
-                          Sessão renovada! Você já pode realizar a busca novamente.
-                      </p>
-                  </div>`;
-          }
-          
-          const divNotas = document.getElementById('areaNotas');
-          if (divNotas && divNotas.innerHTML.includes('fa-user-clock')) {
-              divNotas.innerHTML = `
-                  <div class="text-center mt-4">
-                      <i class="fas fa-check-circle text-success mb-2"></i>
-                      <p class="small mb-0" style="color: var(--text-secondary);">
-                          Sessão renovada! Você já pode realizar a busca novamente.
-                      </p>
-                  </div>`;
-          }
-        
          return; 
       }
 
-      document.getElementById('login-screen').style.display = 'none';
-      document.getElementById('overlay-loading').style.display = 'flex';
-
-      chamarAPI('getHierarquiaDados')
-        .then(dados => {
-          window.inicializarApp(dados);
-          document.getElementById('overlay-loading').style.display = 'none';
-          document.getElementById('app-container').style.display = 'block';
-          iniciarMonitoramentoInatividade();
-        })
-        .catch(e => {
-          document.getElementById('overlay-loading').style.display = 'none';
-          document.getElementById('login-screen').style.display = 'flex';
-          document.getElementById('login-error').innerText = e.message; 
-          window.fazerLogout();
-        });
+      // Busca os dados iniciais do banco
+      try {
+        const hierarquia = await buscarHierarquiaDados();
+        window.inicializarApp(hierarquia);
+        document.getElementById('overlay-loading').style.display = 'none';
+        document.getElementById('app-container').style.display = 'block';
+        iniciarMonitoramentoInatividade();
+      } catch (e) {
+        document.getElementById('overlay-loading').style.display = 'none';
+        document.getElementById('login-screen').style.display = 'flex';
+        document.getElementById('login-error').innerText = "Erro ao carregar dados. Sem permissão."; 
+        window.fazerLogout();
+      }
     }
 
-    window.fazerLogout = function() {
+    window.fazerLogout = async function() {
+      await supabaseClient.auth.signOut();
+      
       USER_TOKEN = null;
       DADOS_CACHE = {}; 
       DADOS_RELATORIO_ATUAL = null; 
@@ -742,7 +742,7 @@
     // =========================================================
     // 3. INICIALIZAÇÃO DA PÁGINA
     // =========================================================
-    window.onload = function() {
+    window.onload = async function() {
       try {
         if (document.documentElement.getAttribute('data-theme') === 'dark') {
            const icon = document.getElementById('icon-theme');
@@ -752,70 +752,65 @@
       } catch(e) {}
 
       if (verificarSessaoSalva()) {
-        const dadosUser = parseJwt(USER_TOKEN);
-        if (dadosUser?.email) {
-           document.getElementById('lblUserEmail').innerText = dadosUser.email;
+        const { data: { session } } = await supabaseClient.auth.getSession();
+        
+        if (!session) {
+           window.fazerLogout();
+           return;
+        }
+
+        if (session.user?.email) {
+           document.getElementById('lblUserEmail').innerText = session.user.email;
         }
 
         document.getElementById('login-screen').style.display = 'none';
         document.getElementById('overlay-loading').style.display = 'flex';
         
-        chamarAPI('getHierarquiaDados')
-          .then(dados => {
-            window.inicializarApp(dados);
-            document.documentElement.removeAttribute('data-session');
-            document.getElementById('overlay-loading').style.display = 'none';
-            document.getElementById('app-container').style.display = 'block';
-            iniciarMonitoramentoInatividade();
-          })
-          .catch(() => window.fazerLogout());
+        try {
+          const hierarquia = await buscarHierarquiaDados();
+          window.inicializarApp(hierarquia);
+          document.documentElement.removeAttribute('data-session');
+          document.getElementById('overlay-loading').style.display = 'none';
+          document.getElementById('app-container').style.display = 'block';
+          iniciarMonitoramentoInatividade();
+        } catch(e) {
+          window.fazerLogout();
+        }
       }
     };
 
     // =========================================================
-    // 4. UTILITÁRIOS E API
+    // 4. CHAMADAS AO BANCO (SUPABASE)
     // =========================================================
-    function parseJwt(token) {
-      try { 
-        return JSON.parse(decodeURIComponent(window.atob(token.split('.')[1].replace(/-/g, '+').replace(/_/g, '/')).split('').map(c => '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2)).join(''))); 
-      } catch (e) { 
-        return null; 
-      }
-    }
-
-    async function chamarAPI(action, payload = {}) {
+    
+    async function buscarHierarquiaDados() {
       atualizarAtividade();
-      const bodyData = { userToken: USER_TOKEN, action: action, ...payload };
-      
-      const payloadString = JSON.stringify(bodyData);
-      
-      const formData = new URLSearchParams();
-      formData.append('dados', payloadString);
-      
-      const response = await fetch(API_URL, { 
-        method: "POST", 
-        headers: { "Content-Type": "application/x-www-form-urlencoded" }, 
-        body: formData.toString() 
-      });
-      
-      const responseText = await response.text();
-      let json;
-  
-      try {
-        json = JSON.parse(responseText);
-      } catch (err) {
-        throw new Error("Erro no formato da resposta da API. Tente novamente.");
-      }
-      
-      if (json.error === "TOKEN_EXPIRED") {
-         window.mostrarModalRenovacao('api');
-         throw new Error("TOKEN_EXPIRED");
-      }
+      const { data, error } = await supabaseClient
+        .from('matriculas')
+        .select(`turmas (ano, nome), estudantes (nome)`);
 
-      if (json.error) throw new Error(json.error);
-      return json;
+      if (error) throw error;
+
+      const hierarquia = {};
+      data.forEach(linha => {
+        if(!linha.turmas || !linha.estudantes) return;
+        let ano = String(linha.turmas.ano);
+        let turma = linha.turmas.nome;
+        let aluno = linha.estudantes.nome;
+
+        if (!hierarquia[ano]) hierarquia[ano] = {};
+        if (!hierarquia[ano][turma]) hierarquia[ano][turma] = [];
+        if (!hierarquia[ano][turma].includes(aluno)) {
+          hierarquia[ano][turma].push(aluno);
+        }
+      });
+      return hierarquia;
     }
 
+    // =========================================================
+    // OUTROS UTILITÁRIOS (Temas, etc)
+    // =========================================================
+    
     function hexToRgb(hex) {
       const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
       return result ? { 
@@ -908,7 +903,7 @@
     };
 
     // =========================================================
-    // 6. LÓGICA DE UI (DROPDOWNS E TABELAS)
+    // 6. LÓGICA DE UI E NEGÓCIO (Trazendo dados do Supabase)
     // =========================================================
     window.limparTela = function() { 
       document.getElementById('resultadoArea').innerHTML = ''; 
@@ -974,7 +969,9 @@
       selAluno.disabled = false; 
     };
 
-    window.buscarRelatorio = function() { 
+    // NOVA FUNÇÃO: Busca Cabeçalho direto no Supabase
+    window.buscarRelatorio = async function() { 
+      atualizarAtividade();
       const ano = document.getElementById('selAno').value; 
       const turma = document.getElementById('selTurma').value; 
       const aluno = document.getElementById('selAluno').value; 
@@ -989,20 +986,58 @@
         </div>
       `; 
       
-      chamarAPI('getRelatorioCabecalho', { ano, turma, aluno })
-        .then(dados => window.exibirCabecalho(dados))
-        .catch(e => {
-            if (e.message === "TOKEN_EXPIRED") {
-               area.innerHTML = `
-                 <div class="text-center p-5">
-                   <i class="fas fa-user-clock fa-2x text-warning mb-3"></i>
-                   <p class="small mb-0" style="color: var(--text-secondary);">Sessão suspensa. Conclua a autenticação na janela para continuar.</p>
-                 </div>
-               `;
-            } else {
-               area.innerHTML = `<div class="alert alert-danger">Erro: ${e.message}</div>`;
-            }
-        });
+      try {
+        const { data: estData, error: errEst } = await supabaseClient
+          .from('estudantes')
+          .select('id, nome, cd_sistec')
+          .eq('nome', aluno)
+          .single();
+
+        if (errEst) throw new Error("Estudante não encontrado.");
+
+        const { data: matData, error: errMat } = await supabaseClient
+          .from('matriculas')
+          .select(`
+            ch_anual, dias_letivos, tot_faltas, porc_faltas, res_final, observacoes,
+            turmas (ano, nome, ocs(codigo))
+          `)
+          .eq('estudante_id', estData.id);
+
+        if (errMat) throw new Error("Erro ao buscar matrículas.");
+
+        const oc = matData[0]?.turmas?.ocs?.codigo || "NA";
+        const anoBase = parseInt(ano);
+        const trajetoria = [];
+
+        for (let i = 0; i < 3; i++) {
+          let anoB = anoBase + i;
+          let matAno = matData.find(m => m.turmas.ano === anoB);
+          
+          if (matAno) {
+            trajetoria.push({ 
+              existe: true, ano: matAno.turmas.ano, turma: matAno.turmas.nome, 
+              ch: matAno.ch_anual, dias: matAno.dias_letivos, faltas: matAno.tot_faltas, 
+              porc: matAno.porc_faltas, res: matAno.res_final, obs: matAno.observacoes 
+            });
+          } else {
+            trajetoria.push({ existe: false, ano: anoB, turma: "-" });
+          }
+        }
+
+        const anosRegistrados = [...new Set(matData.map(m => m.turmas.ano))].sort((a,b)=>a-b).join(', ');
+
+        const dadosMapeados = { 
+          aluno: estData.nome, 
+          oc: oc, 
+          sistec: estData.cd_sistec, 
+          anosRegistrados: anosRegistrados, 
+          trajetoria: trajetoria 
+        };
+
+        window.exibirCabecalho(dadosMapeados);
+      } catch (e) {
+         area.innerHTML = `<div class="alert alert-danger">Erro: ${e.message}</div>`;
+      }
     };
 
     window.exibirCabecalho = function(dados) { 
@@ -1197,7 +1232,9 @@
       }
     };
 
-    window.carregarTabelaNotas = function(aluno, oc, trajetoria) { 
+    // NOVA FUNÇÃO: Busca Notas direto no Supabase
+    window.carregarTabelaNotas = async function(aluno, oc, trajetoria) { 
+      atualizarAtividade();
       const divNotas = document.getElementById('areaNotas'); 
       divNotas.innerHTML = `
         <div class="text-center mt-4">
@@ -1206,28 +1243,52 @@
         </div>
       `; 
       
-      chamarAPI('getTabelaNotas', { aluno, oc, trajetoria })
-        .then(tabela => { 
-          DADOS_NOTAS_ATUAL = tabela; 
-          window.renderizarTabelaFinal(tabela, trajetoria); 
-        })
-        .catch(e => {
-            if (e.message === "TOKEN_EXPIRED") {
-               divNotas.innerHTML = `
-                 <div class="text-center mt-4">
-                   <i class="fas fa-user-clock text-warning mb-2"></i>
-                   <p class="small style="color: var(--text-secondary);" mb-0">Faça login e repita a busca.</p>
-                 </div>
-               `;
-            } else {
-               divNotas.innerHTML = `<div class="alert alert-danger">Erro Notas: ${e.message}</div>`;
+      try {
+        const { data: ocData } = await supabaseClient.from('ocs').select('id').eq('codigo', oc).single();
+        if (!ocData) throw new Error("OC não encontrada");
+
+        const { data: disciplinas } = await supabaseClient.from('disciplinas').select('nome').eq('oc_id', ocData.id).order('ordem');
+        const nomesDisciplinas = disciplinas.map(d => d.nome);
+
+        const { data: estData } = await supabaseClient.from('estudantes').select('id').eq('nome', aluno).single();
+        
+        const { data: matriculas } = await supabaseClient.from('matriculas').select('id, turmas(ano, nome)').eq('estudante_id', estData.id);
+        const matriculasIds = matriculas.map(m => m.id);
+
+        const { data: notasBD } = await supabaseClient
+          .from('notas')
+          .select(`nota, ch, falta, disciplinas(nome), matricula_id`)
+          .in('matricula_id', matriculasIds);
+
+        const mapaNotas = {};
+        notasBD.forEach(n => {
+            const mat = matriculas.find(m => m.id === n.matricula_id);
+            if (mat && n.disciplinas) {
+                const chave = `${mat.turmas.ano}|${mat.turmas.nome}|${n.disciplinas.nome}`;
+                mapaNotas[chave] = { nota: n.nota, ch: n.ch, falta: n.falta };
             }
         });
-    };
 
-    // =========================================================
-    // LÓGICA DE SELEÇÃO E CÓPIA (ATUALIZADO)
-    // =========================================================
+        const tabelaFinal = nomesDisciplinas.map(discNome => {
+            let linha = { disciplina: discNome, anos: [] };
+            trajetoria.forEach(t => {
+                if (t.existe) {
+                    const chave = `${t.ano}|${t.turma}|${discNome}`;
+                    linha.anos.push(mapaNotas[chave] || { nota: "-", ch: "-", falta: "-" });
+                } else {
+                    linha.anos.push({ nota: "-", ch: "-", falta: "-" });
+                }
+            });
+            return linha;
+        });
+
+        DADOS_NOTAS_ATUAL = tabelaFinal; 
+        window.renderizarTabelaFinal(tabelaFinal, trajetoria); 
+
+      } catch (e) {
+        divNotas.innerHTML = `<div class="alert alert-danger">Erro Notas: ${e.message}</div>`;
+      }
+    };
 
     window.formatarCelula = function(valor, mesclagem) { 
       if (!valor) valor = "-"; 
@@ -1298,10 +1359,6 @@
       
       document.getElementById('areaNotas').innerHTML = html; 
     };
-
-    // =========================================================
-    // LÓGICA DE VISUALIZAÇÃO E CONTROLE (MATRIZ UNIFICADA)
-    // =========================================================
 
     let frameVisualUpdate = null;
 
