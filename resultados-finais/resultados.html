@@ -394,7 +394,8 @@
       buscarHierarquia: async function() {
         const { data, error } = await supabaseClient
           .from('matriculas')
-          .select(`turmas (ano, nome), estudantes (nome)`);
+          .select(`turmas (ano, nome), estudantes (nome)`)
+          .limit(100000); // <-- Força a busca de até 100.000 linhas
 
         if (error) throw error;
 
