@@ -563,12 +563,28 @@
     var DADOS_NOTAS_ATUAL = null; 
     var TIMER_CHECK = null; 
     var BOTAO_JA_RENDERIZADO = false;
-    var CURRENT_NONCE = "";
+    var CURRENT_RAW_NONCE = "";
 
-    function gerarNonce() {
-      const array = new Uint8Array(16);
-      window.crypto.getRandomValues(array);
-      return Array.from(array, c => c.toString(16).padStart(2, '0')).join('');
+    // 1. Função auxiliar para converter os códigos de forma segura
+    function base64UrlEncode(buffer) {
+      const base64 = btoa(String.fromCharCode(...new Uint8Array(buffer)));
+      return base64.replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+    }
+
+    // 2. Função que gera a dupla de códigos (Puro e Criptografado)
+    async function gerarNonces() {
+      // Gera o código puro
+      const rawNonceBytes = new Uint8Array(32);
+      window.crypto.getRandomValues(rawNonceBytes);
+      const rawNonce = base64UrlEncode(rawNonceBytes);
+  
+      // Faz a criptografia (SHA-256) do código puro
+      const encoder = new TextEncoder();
+      const encoded = encoder.encode(rawNonce);
+      const hashBuffer = await window.crypto.subtle.digest('SHA-256', encoded);
+      const hashedNonce = base64UrlEncode(hashBuffer);
+  
+      return { raw: rawNonce, hashed: hashedNonce };
     }
 
     // =========================================================
@@ -607,30 +623,31 @@
       tentarRenderizarBotao();
     };
 
-    function tentarRenderizarBotao() {
+    async function tentarRenderizarBotao() {
       if (verificarSessaoSalva() || BOTAO_JA_RENDERIZADO) return;
 
       if (window.google) {
-         CURRENT_NONCE = gerarNonce(); // 1. Gera o código único
-      
+         const nonces = await gerarNonces();
+         CURRENT_RAW_NONCE = nonces.raw; // Guarda o código puro para o Supabase
+     
          google.accounts.id.initialize({
             client_id: CLIENT_ID_GOOGLE,
             callback: handleCredentialResponse,
             auto_select: false,
-            nonce: CURRENT_NONCE // 2. Envia para o Google
+            nonce: nonces.hashed // Envia o código criptografado para o Google
          });
-      
+     
          google.accounts.id.renderButton(
             document.getElementById("btn-google-area"),
-             { theme: "outline", size: "large", shape: "pill", width: 250 }
+            { theme: "outline", size: "large", shape: "pill", width: 250 }
          );
-      
+     
          google.accounts.id.prompt(); 
          BOTAO_JA_RENDERIZADO = true;
       }
     }
 
-    window.mostrarModalRenovacao = function(motivo = 'api') {
+    window.mostrarModalRenovacao = async function(motivo = 'api') {
        const titulo = document.getElementById('titulo-renovacao');
        const texto = document.getElementById('texto-renovacao');
        const icone = document.getElementById('icone-renovacao');
@@ -651,17 +668,18 @@
        
        bsModal.show();
 
-       CURRENT_NONCE = gerarNonce(); // 1. Gera um NOVO código
+       const nonces = await gerarNonces();
+       CURRENT_RAW_NONCE = nonces.raw; // Guarda o código puro atualizado
 
        google.accounts.id.initialize({
           client_id: CLIENT_ID_GOOGLE,
           callback: handleCredentialResponse,
-          nonce: CURRENT_NONCE // 2. Envia para o Google no modal
+          nonce: nonces.hashed // Envia o código criptografado atualizado
        });
 
        if (window.google) {
            google.accounts.id.renderButton(
-           document.getElementById("btn-google-renew-area"),
+              document.getElementById("btn-google-renew-area"),
               { theme: "outline", size: "large", shape: "pill", width: 250 }
            );
        }
@@ -669,14 +687,14 @@
 
     // NOVA FUNÇÃO DE LOGIN: Usa o token do Google para logar no Supabase
     async function handleCredentialResponse(response) {
-        document.getElementById('login-screen').style.display = 'none';
-        document.getElementById('overlay-loading').style.display = 'flex';
+      document.getElementById('login-screen').style.display = 'none';
+      document.getElementById('overlay-loading').style.display = 'flex';
   
-        const { data, error } = await supabaseClient.auth.signInWithIdToken({
-          provider: 'google',
-          token: response.credential,
-          nonce: CURRENT_NONCE // 3. Envia o código exato para o Supabase validar
-        });
+      const { data, error } = await supabaseClient.auth.signInWithIdToken({
+        provider: 'google',
+        token: response.credential,
+        nonce: CURRENT_RAW_NONCE // Supabase recebe o Puro (ele fará o SHA-256 para checar)
+      });
 
         if (error) {
         document.getElementById('overlay-loading').style.display = 'none';
