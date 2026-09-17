@@ -14,8 +14,8 @@ import time
 # CONFIGURAÇÃO DE DIAGNÓSTICO (LOGS)
 # ==========================================
 SESSION_ID = uuid.uuid4().hex[:8].upper()
-VERSION = '1.0.14'
-DT_VERSION = '14/09/2026'
+VERSION = '1.0.17'
+DT_VERSION = '16/09/2026'
 
 LOG_BASE_DIR = os.path.join(tempfile.gettempdir(), 'pdf_editor_edocs_logs')
 os.makedirs(LOG_BASE_DIR, exist_ok=True)
@@ -1333,7 +1333,7 @@ class TermuxPDFEditor:
                             if clean_stats.get("acroform_removed"): acoes_limpeza.append("AcroForm removido")
                             if clean_stats.get("perms_removed"): acoes_limpeza.append("Permissões removidas")
                             if clean_stats.get("sigflags_removed"): acoes_limpeza.append("SigFlags removidos")
-                            if clean_stats.get("widgets_flattened", 0) > 0: acoes_limpeza.append(f"{clean_stats['widgets_flattened']} widget(s) achatado(s)")
+                            if clean_stats.get("widgets_flattened", 0) > 0: acoes_limpeza.append(f"{clean_stats['widgets_flattened']} Widget(s) achatado(s)")
                             
                             if acoes_limpeza:
                                 logging.info(f"🧹 PRÉ-PROCESSAMENTO APLICADO: {' | '.join(acoes_limpeza)}")
@@ -1358,9 +1358,9 @@ class TermuxPDFEditor:
                             if details:
                                 msg_parts.append(f"Removidos: {', '.join(details)}")
                             if clean_stats["widgets_flattened"] > 0:
-                                msg_parts.append(f"Widgets achatados: {clean_stats['widgets_flattened']}")
+                                msg_parts.append(f"Assinaturas achatadas: {clean_stats['widgets_flattened']}")
                             
-                            limpeza_msg = f"\n[dim]Limpeza pré-importação: {' | '.join(msg_parts)}[/dim]"
+                            limpeza_msg = f"\n[dim]{' | '.join(msg_parts)}[/dim]"
                     
                         # Trata o contador de E-DOCS e Assinaturas (fica no final)
                         edocs_msg = f"\n[dim]Borda E-Docs: {len(edocs_pages)} | Assinaturas residuais: {len(signed_pages)}[/dim]"
@@ -1586,7 +1586,7 @@ class TermuxPDFEditor:
                 CONSOLE.print(Panel("[bold cyan]SALVAR E EXPORTAR PDF[/bold cyan]", border_style="cyan"))
                 CONSOLE.print(f"📂 [bold yellow]Pasta selecionada:[/bold yellow] [dim]{chosen_dir}[/dim]\n", highlight=False)
                 CONSOLE.print(f"[bold green][SUCESSO][/bold green] PDF salvo em: [cyan]{out_path}[/cyan]", highlight=False)
-                CONSOLE.print(f"-> E-DOCS reajustados: [bold white]{edocs_count}[/bold white]")
+                CONSOLE.print(f"-> Bordas E-Docs reajustados: [bold white]{edocs_count}[/bold white]")
                 CONSOLE.print(f"-> Assinaturas rasterizadas: [bold white]{signed_count}[/bold white]")
                 CONSOLE.print("\n[bold red][Q + ENTER] Voltar[/bold red]")
                     
