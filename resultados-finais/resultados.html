@@ -563,6 +563,13 @@
     var DADOS_NOTAS_ATUAL = null; 
     var TIMER_CHECK = null; 
     var BOTAO_JA_RENDERIZADO = false;
+    var CURRENT_NONCE = "";
+
+    function gerarNonce() {
+      const array = new Uint8Array(16);
+      window.crypto.getRandomValues(array);
+      return Array.from(array, c => c.toString(16).padStart(2, '0')).join('');
+    }
 
     // =========================================================
     // 2. GESTÃO DE SESSÃO & LOGIN GOOGLE -> SUPABASE
@@ -604,17 +611,20 @@
       if (verificarSessaoSalva() || BOTAO_JA_RENDERIZADO) return;
 
       if (window.google) {
+         CURRENT_NONCE = gerarNonce(); // 1. Gera o código único
+      
          google.accounts.id.initialize({
             client_id: CLIENT_ID_GOOGLE,
             callback: handleCredentialResponse,
-            auto_select: false
+            auto_select: false,
+            nonce: CURRENT_NONCE // 2. Envia para o Google
          });
-         
+      
          google.accounts.id.renderButton(
             document.getElementById("btn-google-area"),
-            { theme: "outline", size: "large", shape: "pill", width: 250 }
+             { theme: "outline", size: "large", shape: "pill", width: 250 }
          );
-         
+      
          google.accounts.id.prompt(); 
          BOTAO_JA_RENDERIZADO = true;
       }
@@ -641,14 +651,17 @@
        
        bsModal.show();
 
+       CURRENT_NONCE = gerarNonce(); // 1. Gera um NOVO código
+
        google.accounts.id.initialize({
           client_id: CLIENT_ID_GOOGLE,
           callback: handleCredentialResponse,
+          nonce: CURRENT_NONCE // 2. Envia para o Google no modal
        });
 
        if (window.google) {
            google.accounts.id.renderButton(
-              document.getElementById("btn-google-renew-area"),
+           document.getElementById("btn-google-renew-area"),
               { theme: "outline", size: "large", shape: "pill", width: 250 }
            );
        }
@@ -656,15 +669,16 @@
 
     // NOVA FUNÇÃO DE LOGIN: Usa o token do Google para logar no Supabase
     async function handleCredentialResponse(response) {
-      document.getElementById('login-screen').style.display = 'none';
-      document.getElementById('overlay-loading').style.display = 'flex';
-      
-      const { data, error } = await supabaseClient.auth.signInWithIdToken({
-        provider: 'google',
-        token: response.credential,
-      });
+        document.getElementById('login-screen').style.display = 'none';
+        document.getElementById('overlay-loading').style.display = 'flex';
+  
+        const { data, error } = await supabaseClient.auth.signInWithIdToken({
+          provider: 'google',
+          token: response.credential,
+          nonce: CURRENT_NONCE // 3. Envia o código exato para o Supabase validar
+        });
 
-      if (error) {
+        if (error) {
         document.getElementById('overlay-loading').style.display = 'none';
         document.getElementById('login-screen').style.display = 'flex';
         document.getElementById('login-error').innerText = "Erro no login: " + error.message; 
