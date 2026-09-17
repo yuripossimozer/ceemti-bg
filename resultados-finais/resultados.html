@@ -1090,7 +1090,7 @@
     };
 
     window.formatarCelula = function(valor, mesclagem) { 
-      if (!valor) valor = "-"; 
+      if (valor === null || valor === undefined || valor === "") valor = "-"; 
       const qtdTabs = Math.max(0, (mesclagem || 1) - 1);
       const tabs = "\t".repeat(qtdTabs); 
       return valor + tabs; 
