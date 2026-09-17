@@ -724,6 +724,18 @@
       }
 
       // Busca os dados iniciais do banco
+  try {
+    const { data: permData, error: permError } = await supabaseClient
+      .from('usuarios_permitidos')
+      .select('email');
+      
+    if (permError || !permData || permData.length === 0) {
+      throw new Error("Acesso negado. Seu e-mail não está na lista de usuários autorizados.");
+    }
+
+    const hierarquia = await buscarHierarquiaDados();
+    window.inicializarApp(hierarquia);
+    
       try {
         const hierarquia = await buscarHierarquiaDados();
         window.inicializarApp(hierarquia);
@@ -734,7 +746,6 @@
         console.error("Erro completo:", e);
         document.getElementById('overlay-loading').style.display = 'none';
         document.getElementById('login-screen').style.display = 'flex';
-        // Aqui ele vai mostrar a mensagem real que vem do banco:
         document.getElementById('login-error').innerText = "Erro do Banco: " + (e.message || JSON.stringify(e)); 
         window.fazerLogout();
       }
@@ -797,6 +808,14 @@
         document.getElementById('overlay-loading').style.display = 'flex';
         
         try {
+          const { data: permData, error: permError } = await supabaseClient
+          .from('usuarios_permitidos')
+          .select('email');
+        
+          if (permError || !permData || permData.length === 0) {
+            throw new Error("Acesso negado. Seu e-mail não está na lista de usuários autorizados.");
+          }
+           
           const hierarquia = await buscarHierarquiaDados();
           window.inicializarApp(hierarquia);
           document.documentElement.removeAttribute('data-session');
