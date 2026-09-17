@@ -565,28 +565,24 @@
     var BOTAO_JA_RENDERIZADO = false;
     var CURRENT_RAW_NONCE = "";
 
-    // 1. Função auxiliar para converter os códigos de forma segura
-    function base64UrlEncode(buffer) {
-      const base64 = btoa(String.fromCharCode(...new Uint8Array(buffer)));
-      return base64.replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
-    }
-
-    // 2. Função que gera a dupla de códigos (Puro e Criptografado)
+    // 1. Função que gera a dupla de códigos (Puro e Criptografado em Hexadecimal)
     async function gerarNonces() {
-      // Gera o código puro
-      const rawNonceBytes = new Uint8Array(32);
-      window.crypto.getRandomValues(rawNonceBytes);
-      const rawNonce = base64UrlEncode(rawNonceBytes);
-  
+      // Gera o código puro 
+      const rawBytes = new Uint8Array(16);
+      window.crypto.getRandomValues(rawBytes);
+      const rawNonce = Array.from(rawBytes).map(b => b.toString(16).padStart(2, '0')).join('');
+
       // Faz a criptografia (SHA-256) do código puro
       const encoder = new TextEncoder();
       const encoded = encoder.encode(rawNonce);
       const hashBuffer = await window.crypto.subtle.digest('SHA-256', encoded);
-      const hashedNonce = base64UrlEncode(hashBuffer);
-  
+
+      // Converte o hash para Hexadecimal (padrão esperado pelo Supabase)
+      const hashArray = Array.from(new Uint8Array(hashBuffer));
+      const hashedNonce = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+
       return { raw: rawNonce, hashed: hashedNonce };
     }
-
     // =========================================================
     // 2. GESTÃO DE SESSÃO & LOGIN GOOGLE -> SUPABASE
     // =========================================================
