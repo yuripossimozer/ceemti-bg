@@ -393,25 +393,26 @@
       
       buscarHierarquia: async function() {
         const { data, error } = await supabaseClient
-          .from('matriculas')
-          .select(`turmas (ano, nome), estudantes (nome)`)
-          .limit(100000); // <-- Força a busca de até 100.000 linhas
+          .from('vw_hierarquia_filtros')
+          .select('ano, turma, estudante');
 
         if (error) throw error;
 
         const hierarquia = {};
+        
         data.forEach(linha => {
-          if(!linha.turmas || !linha.estudantes) return;
-          let ano = String(linha.turmas.ano);
-          let turma = linha.turmas.nome;
-          let aluno = linha.estudantes.nome;
+          if (!linha.ano || !linha.turma || !linha.estudante) return;
+          
+          let ano = String(linha.ano);
+          let turma = linha.turma;
+          let aluno = linha.estudante;
 
           if (!hierarquia[ano]) hierarquia[ano] = {};
           if (!hierarquia[ano][turma]) hierarquia[ano][turma] = [];
-          if (!hierarquia[ano][turma].includes(aluno)) {
-            hierarquia[ano][turma].push(aluno);
-          }
+          
+          hierarquia[ano][turma].push(aluno);
         });
+        
         return hierarquia;
       },
 
