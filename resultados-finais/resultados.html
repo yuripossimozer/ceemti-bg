@@ -289,6 +289,20 @@
              </div>
              <button onclick="window.fazerLogout()" class="btn btn-sm btn-outline-danger rounded-pill px-3" data-bs-dismiss="modal">Sair</button>
           </div>
+          <div class="mt-3 p-3 rounded d-flex align-items-center justify-content-between" style="border: 1px solid var(--outline-variant);">
+             <div class="d-flex align-items-center gap-3">
+                <div class="d-flex align-items-center justify-content-center rounded-circle" style="width: 40px; height: 40px; background-color: var(--primary-container); color: var(--on-primary-container);">
+                  <i class="fas fa-fingerprint"></i>
+                </div>
+                <div style="line-height: 1.2;">
+                  <span class="d-block fw-bold" style="font-size: 0.9rem;">Acesso Rápido (Passkey)</span>
+                  <span class="d-block small text-secondary">Biometria ou PIN do aparelho</span>
+                </div>
+             </div>
+             <button id="btn-add-passkey" onclick="window.cadastrarPasskey()" class="btn btn-sm btn-outline-primary rounded-pill px-3">
+                Cadastrar
+             </button>
+          </div>
         </div>
       </div>
     </div>
@@ -303,8 +317,12 @@
     const SUPABASE_URL = "https://gtawjrszrzmuftzjoqyk.supabase.co";
     const SUPABASE_ANON_KEY = "sb_publishable_k7C3tn6q8LaJrco8GSdQ7A_l2qJQxIb";
     
-    const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-
+    const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
+      auth: {
+        experimental: { passkey: true }
+      }
+    });
+    
     let DADOS_RELATORIO_ATUAL = null; 
     let DADOS_NOTAS_ATUAL = null; 
     let TIMER_INATIVIDADE = null;
@@ -1128,6 +1146,41 @@
       } catch (err) { alert("Erro ao copiar."); } 
       document.body.removeChild(textarea); 
     };
+
+    window.cadastrarPasskey = async function() { 
+      const btn = document.getElementById('btn-add-passkey');
+      const originalText = btn.innerHTML;
+  
+      btn.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>';
+      btn.disabled = true;
+
+      try {
+        const { data, error } = await supabaseClient.auth.registerPasskey();
+    
+        if (error) {
+          console.error(error);
+          alert("Não foi possível registrar o dispositivo: " + error.message);
+        } else {
+          btn.classList.replace('btn-outline-primary', 'btn-success');
+          btn.style.color = "#fff";
+          btn.innerHTML = '<i class="fas fa-check"></i> Cadastrado';
+      
+          setTimeout(() => {
+             btn.classList.replace('btn-success', 'btn-outline-primary');
+             btn.style.color = "";
+             btn.innerHTML = originalText;
+          }, 3000);
+        }
+      } catch (err) {
+        alert("Erro inesperado ao invocar WebAuthn: " + err.message);
+      } finally {
+        btn.disabled = false;
+        if(btn.innerHTML.includes('spinner')) {
+           btn.innerHTML = originalText;
+        }
+      }
+    };
+    
   </script>
 
 </body>
