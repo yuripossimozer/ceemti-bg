@@ -390,30 +390,34 @@
     //    * EDITE AQUI SUA NOVA LÓGICA DE CONSULTA FUTURA *
     // =========================================================
     const DataService = {
-      
-      buscarHierarquia: async function() {
+      buscarAnos: async function() {
         const { data, error } = await supabaseClient
           .from('vw_hierarquia_filtros')
-          .select('ano, turma, estudante');
+          .select('ano');
 
         if (error) throw error;
+        return [...new Set(data.map(item => item.ano))].sort().reverse();
+      },
 
-        const hierarquia = {};
-        
-        data.forEach(linha => {
-          if (!linha.ano || !linha.turma || !linha.estudante) return;
-          
-          let ano = String(linha.ano);
-          let turma = linha.turma;
-          let aluno = linha.estudante;
+      buscarTurmas: async function(ano) {
+        const { data, error } = await supabaseClient
+          .from('vw_hierarquia_filtros')
+          .select('turma')
+          .eq('ano', ano);
 
-          if (!hierarquia[ano]) hierarquia[ano] = {};
-          if (!hierarquia[ano][turma]) hierarquia[ano][turma] = [];
-          
-          hierarquia[ano][turma].push(aluno);
-        });
-        
-        return hierarquia;
+        if (error) throw error;
+        return [...new Set(data.map(item => item.turma))].sort();
+      },
+
+      buscarAlunos: async function(ano, turma) {
+        const { data, error } = await supabaseClient
+          .from('vw_hierarquia_filtros')
+          .select('estudante')
+          .eq('ano', ano)
+          .eq('turma', turma);
+
+        if (error) throw error;
+        return [...new Set(data.map(item => item.estudante))].sort();
       },
 
       buscarDadosRelatorio: async function(anoSelecionado, nomeAluno) {
@@ -753,26 +757,31 @@
       DADOS_NOTAS_ATUAL = null; 
     };
 
-    window.inicializarApp = function(dados) { 
-      DADOS_CACHE = dados; 
+    window.inicializarApp = async function() { 
       const selAno = document.getElementById('selAno'); 
-      const anos = Object.keys(DADOS_CACHE).sort().reverse(); 
+      const anos = await DataService.buscarAnos();
+      
       selAno.innerHTML = '<option value="" selected disabled>Selecione</option>'; 
       anos.forEach(ano => { 
         let opt = document.createElement('option'); opt.value = ano; opt.text = ano; selAno.appendChild(opt); 
       }); 
     };
 
-    window.aoMudarAno = function() { 
+    window.aoMudarAno = async function() { 
       window.limparTela(); 
       const ano = document.getElementById('selAno').value; 
       const selTurma = document.getElementById('selTurma'); 
       const selAluno = document.getElementById('selAluno'); 
       
-      selAluno.innerHTML = '<option value=""></option>'; selAluno.disabled = true; 
-      if (!ano || !DADOS_CACHE[ano]) return; 
+      selTurma.innerHTML = '<option value="" selected disabled>Carregando...</option>';
+      selAluno.innerHTML = '<option value=""></option>'; 
+      selAluno.disabled = true; 
+      selTurma.disabled = true;
       
-      const turmas = Object.keys(DADOS_CACHE[ano]).sort(); 
+      if (!ano) return; 
+      
+      const turmas = await DataService.buscarTurmas(ano);
+      
       selTurma.innerHTML = '<option value="" selected disabled>Selecione</option>'; 
       turmas.forEach(t => { 
         let opt = document.createElement('option'); opt.value = t; opt.text = t; selTurma.appendChild(opt); 
@@ -780,15 +789,19 @@
       selTurma.disabled = false; 
     };
 
-    window.aoMudarTurma = function() { 
+    window.aoMudarTurma = async function() { 
       window.limparTela(); 
       const ano = document.getElementById('selAno').value; 
       const turma = document.getElementById('selTurma').value; 
       const selAluno = document.getElementById('selAluno'); 
       
-      if (!ano || !turma || !DADOS_CACHE[ano][turma]) return; 
+      selAluno.innerHTML = '<option value="" selected disabled>Carregando...</option>';
+      selAluno.disabled = true;
       
-      const alunos = DADOS_CACHE[ano][turma].sort(); 
+      if (!ano || !turma) return; 
+      
+      const alunos = await DataService.buscarAlunos(ano, turma);
+      
       selAluno.innerHTML = '<option value="" selected disabled>Selecione</option>'; 
       alunos.forEach(a => { 
         let opt = document.createElement('option'); opt.value = a; opt.text = a; selAluno.appendChild(opt); 
