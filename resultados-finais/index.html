@@ -68,31 +68,35 @@
   </div>
 
   <script>
-    const SUPABASE_URL = "https://gtawjrszrzmuftzjoqyk.supabase.co";
-    const SUPABASE_ANON_KEY = "sb_publishable_k7C3tn6q8LaJrco8GSdQ7A_l2qJQxIb";
-    const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+  const SUPABASE_URL = "https://gtawjrszrzmuftzjoqyk.supabase.co";
+  const SUPABASE_ANON_KEY = "sb_publishable_k7C3tn6q8LaJrco8GSdQ7A_l2qJQxIb";
+  
+  // Alterado para supabaseClient para evitar conflito com o SDK global
+  const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-    // Verifica se já existe uma sessão ativa ao abrir a página
-    window.onload = async function() {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (session) {
-        window.location.href = 'resultados.html'; // Redireciona se já estiver logado
-      }
-    };
-
-    // Função que dispara o OAuth nativo do Supabase
-    async function fazerLogin() {
-      const { data, error } = await supabase.auth.signInWithOAuth({
-        provider: 'google',
-        options: {
-          // Ajuste esta URL para o caminho real do seu GitHub Pages
-          redirectTo: window.location.origin + '/resultados.html'
-        }
-      });
-      if (error) {
-        document.getElementById('login-error').innerText = "Erro ao conectar: " + error.message;
-      }
+  window.onload = async function() {
+    const { data: { session } } = await supabaseClient.auth.getSession();
+    if (session) {
+      window.location.href = 'resultados.html'; 
     }
-  </script>
+  };
+
+  async function fazerLogin() {
+    // Calcula a URL base dinamicamente, mantendo o nome do repositório no GitHub Pages
+    let currentUrl = window.location.origin + window.location.pathname;
+    let redirectUrl = currentUrl.replace('index.html', '') + 'resultados.html';
+
+    const { data, error } = await supabaseClient.auth.signInWithOAuth({
+      provider: 'google',
+      options: {
+        redirectTo: redirectUrl
+      }
+    });
+    
+    if (error) {
+      document.getElementById('login-error').innerText = "Erro ao conectar: " + error.message;
+    }
+  }
+</script>
 </body>
 </html>
