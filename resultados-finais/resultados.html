@@ -29,14 +29,6 @@
           document.documentElement.setAttribute('data-theme', 'dark');
           if (metaTheme) metaTheme.setAttribute('content', '#111315');
         }
-
-        const token = localStorage.getItem('appEscolar_token');
-        const lastActive = localStorage.getItem('appEscolar_lastActive');
-        const timeout = 25 * 60 * 1000;
-        
-        if (token && lastActive && (Date.now() - parseInt(lastActive) < timeout)) {
-          document.documentElement.setAttribute('data-session', 'active');
-        }
       } catch (e) { 
         console.error(e); 
       }
@@ -195,58 +187,24 @@
     }
 
     /* =========================================
-       TELAS DE LOGIN E LOADING
+       TELA DE LOADING E CONTAINER PRINCIPAL
        ========================================= */
-    #login-screen {
-      position: fixed; inset: 0; width: 100%; height: 100dvh; background: var(--background); 
-      z-index: 10000; display: flex; flex-direction: column; justify-content: center; align-items: center;
-    }
     #overlay-loading {
       position: fixed; inset: 0; background: var(--background); z-index: 9999; 
       display: flex; flex-direction: column; justify-content: center; align-items: center;
     }
-    html[data-session="active"] #login-screen { display: none !important; }
-    html[data-session="active"] #overlay-loading { display: flex !important; }
     #app-container { display: none; padding-top: 1rem; }
-    html[data-session="active"] #app-container { display: block !important; }
-    .google-placeholder-rigid {
-      width: 250px; height: 44px; display: flex; justify-content: center; align-items: center;
-      overflow: hidden; margin-bottom: 1rem; border-radius: 22px;
-    }
   </style>
 </head>
 <body>
 
   <!-- =========================================
-       TELA DE LOGIN
-       ========================================= -->
-  <div id="login-screen">
-    <div class="m-card p-5" style="border: 1px solid var(--outline-variant); max-width: 400px; width: 90%;">
-      <div class="text-center mb-4">
-         <i class="fas fa-graduation-cap fa-3x mb-3" style="color: var(--primary)"></i>
-         <h4 class="mb-2">Acesso Restrito</h4>
-         <p class="text-secondary small mb-0">Faça login com sua conta institucional para acessar.</p>
-      </div>
-      
-      <div class="d-flex flex-column align-items-center w-100">
-          <div class="google-placeholder-rigid">
-              <div id="btn-google-area"></div>
-          </div>
-          <div id="login-error" class="text-danger small fw-bold text-center"></div>
-          
-          <a href="../index.html" class="mt-4 text-secondary text-decoration-none" style="font-size: 0.9rem; transition: 0.2s;">
-             <i class="fas fa-arrow-left me-1"></i> Voltar ao Início
-          </a>
-      </div>
-    </div>
-  </div>
-
-  <!-- =========================================
        TELA DE CARREGAMENTO (OVERLAY)
        ========================================= -->
-  <div id="overlay-loading" style="display: none;">
+  <div id="overlay-loading">
     <div class="spinner-border text-primary" style="width: 3rem; height: 3rem;"></div>
-    <p class="mt-3 small fw-bold" style="color: var(--text-secondary); letter-spacing: 1px;">CONECTANDO</p>
+    <p class="mt-3 small fw-bold" style="color: var(--text-secondary); letter-spacing: 1px;">AUTENTICANDO</p>
+    <div id="loading-error" class="text-danger small fw-bold mt-2 text-center px-4"></div>
   </div>
 
   <!-- =========================================
@@ -337,31 +295,6 @@
     </div>
   </div>
 
-  <!-- =========================================
-       MODAL: RENOVAÇÃO DE SESSÃO
-       ========================================= -->
-  <div class="modal fade" id="modalRenovarSessao" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1">
-    <div class="modal-dialog modal-dialog-centered">
-      <div class="modal-content text-center p-4">
-        <div class="mb-4">
-          <i id="icone-renovacao" class="fas fa-hourglass-end fa-3x mb-3" style="color: #ffc107;"></i>
-          <h5 id="titulo-renovacao" style="color: var(--text-main); font-weight: 700;">Sessão Expirada</h5>
-          <p id="texto-renovacao" style="color: var(--text-secondary); font-size: 0.9rem;">
-            Por segurança, sua sessão expirou. Clique abaixo para renovar o acesso sem perder seus dados na tela.
-          </p>
-        </div>
-        <div class="d-flex flex-column align-items-center w-100">
-           <div class="google-placeholder-rigid">
-               <div id="btn-google-renew-area"></div>
-           </div>
-           <a href="../index.html" onclick="window.fazerLogout()" class="mt-4 text-secondary text-decoration-none hover-link" style="font-size: 0.9rem; transition: 0.2s;">
-              <i class="fas fa-arrow-left me-1"></i> Voltar ao Início
-           </a>
-        </div>
-      </div>
-    </div>
-  </div>
-
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 
   <script>
@@ -370,24 +303,16 @@
     // =========================================================
     const SUPABASE_URL = "https://gtawjrszrzmuftzjoqyk.supabase.co";
     const SUPABASE_ANON_KEY = "sb_publishable_k7C3tn6q8LaJrco8GSdQ7A_l2qJQxIb";
-    const CLIENT_ID_GOOGLE = "10938455862-2def58pdbq68jn5encbplrfl5nhcndpl.apps.googleusercontent.com"; 
-    const SESSAO_TIMEOUT_MS = 25 * 60 * 1000; 
-    const KEY_TOKEN = "appEscolar_token";
-    const KEY_LAST_ACTIVE = "appEscolar_lastActive";
-
+    
     const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-    var USER_TOKEN = null;
-    var DADOS_CACHE = {}; 
-    var DADOS_RELATORIO_ATUAL = null; 
-    var DADOS_NOTAS_ATUAL = null; 
-    var TIMER_CHECK = null; 
-    var BOTAO_JA_RENDERIZADO = false;
-    var CURRENT_RAW_NONCE = "";
+    let DADOS_RELATORIO_ATUAL = null; 
+    let DADOS_NOTAS_ATUAL = null; 
+    let TIMER_INATIVIDADE = null;
+    const SESSAO_TIMEOUT_MS = 25 * 60 * 1000; // 25 minutos
 
     // =========================================================
     // 2. CAMADA DE DADOS (DataService) 
-    //    * EDITE AQUI SUA NOVA LÓGICA DE CONSULTA FUTURA *
     // =========================================================
     const DataService = {
       buscarAnos: async function() {
@@ -421,7 +346,6 @@
       },
 
       buscarDadosRelatorio: async function(anoSelecionado, nomeAluno) {
-        // Busca Estudante
         const { data: estData, error: errEst } = await supabaseClient
           .from('estudantes')
           .select('id, nome, cd_sistec')
@@ -430,7 +354,6 @@
 
         if (errEst) throw new Error("Estudante não encontrado.");
 
-        // Busca Matrículas
         const { data: matData, error: errMat } = await supabaseClient
           .from('matriculas')
           .select(`
@@ -441,7 +364,6 @@
 
         if (errMat) throw new Error("Erro ao buscar matrículas.");
 
-        // Formatação dos Dados
         const oc = matData[0]?.turmas?.ocs?.codigo || "NA";
         const anoBase = parseInt(anoSelecionado);
         const trajetoria = [];
@@ -473,26 +395,21 @@
       },
 
       buscarNotas: async function(nomeAluno, codigoOC, trajetoria) {
-        // Busca ID da OC
         const { data: ocData } = await supabaseClient.from('ocs').select('id').eq('codigo', codigoOC).single();
         if (!ocData) throw new Error("OC não encontrada");
 
-        // Busca Disciplinas
         const { data: disciplinas } = await supabaseClient.from('disciplinas').select('nome').eq('oc_id', ocData.id).order('ordem');
         const nomesDisciplinas = disciplinas.map(d => d.nome);
 
-        // Busca IDs
         const { data: estData } = await supabaseClient.from('estudantes').select('id').eq('nome', nomeAluno).single();
         const { data: matriculas } = await supabaseClient.from('matriculas').select('id, turmas(ano, nome)').eq('estudante_id', estData.id);
         const matriculasIds = matriculas.map(m => m.id);
 
-        // Busca Notas
         const { data: notasBD } = await supabaseClient
           .from('notas')
           .select(`nota, ch, falta, disciplinas(nome), matricula_id`)
           .in('matricula_id', matriculasIds);
 
-        // Formatação das Notas
         const mapaNotas = {};
         notasBD.forEach(n => {
             const mat = matriculas.find(m => m.id === n.matricula_id);
@@ -521,191 +438,7 @@
 
 
     // =========================================================
-    // 3. GESTÃO DE SESSÃO & AUTENTICAÇÃO
-    // =========================================================
-    async function gerarNonces() {
-      const rawBytes = new Uint8Array(16);
-      window.crypto.getRandomValues(rawBytes);
-      const rawNonce = Array.from(rawBytes).map(b => b.toString(16).padStart(2, '0')).join('');
-      const encoder = new TextEncoder();
-      const encoded = encoder.encode(rawNonce);
-      const hashBuffer = await window.crypto.subtle.digest('SHA-256', encoded);
-      const hashArray = Array.from(new Uint8Array(hashBuffer));
-      const hashedNonce = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
-      return { raw: rawNonce, hashed: hashedNonce };
-    }
-
-    function verificarSessaoSalva() {
-      const tokenSalvo = localStorage.getItem(KEY_TOKEN);
-      const lastActive = localStorage.getItem(KEY_LAST_ACTIVE);
-      const agora = Date.now();
-      if (tokenSalvo && lastActive && (agora - parseInt(lastActive) < SESSAO_TIMEOUT_MS)) {
-        USER_TOKEN = tokenSalvo;
-        return true;
-      }
-      return false;
-    }
-
-    function atualizarAtividade() {
-      if (USER_TOKEN) localStorage.setItem(KEY_LAST_ACTIVE, Date.now());
-    }
-
-    function iniciarMonitoramentoInatividade() {
-      if (TIMER_CHECK) clearInterval(TIMER_CHECK);
-      TIMER_CHECK = setInterval(() => {
-        const lastActive = localStorage.getItem(KEY_LAST_ACTIVE);
-        if (lastActive && (Date.now() - parseInt(lastActive) >= SESSAO_TIMEOUT_MS)) {
-          clearInterval(TIMER_CHECK); 
-          window.mostrarModalRenovacao('inativo');
-        }
-      }, 60 * 1000); 
-    }
-
-    window.onGoogleLibraryLoad = function() {
-      tentarRenderizarBotao();
-    };
-
-    async function tentarRenderizarBotao() {
-      if (verificarSessaoSalva() || BOTAO_JA_RENDERIZADO) return;
-      if (window.google) {
-         const nonces = await gerarNonces();
-         CURRENT_RAW_NONCE = nonces.raw; 
-         google.accounts.id.initialize({
-            client_id: CLIENT_ID_GOOGLE,
-            callback: handleCredentialResponse,
-            auto_select: false,
-            nonce: nonces.hashed 
-         });
-         google.accounts.id.renderButton(
-            document.getElementById("btn-google-area"),
-            { theme: "outline", size: "large", shape: "pill", width: 250 }
-         );
-         google.accounts.id.prompt(); 
-         BOTAO_JA_RENDERIZADO = true;
-      }
-    }
-
-    async function handleCredentialResponse(response) {
-      document.getElementById('login-screen').style.display = 'none';
-      document.getElementById('overlay-loading').style.display = 'flex';
-  
-      const { data, error } = await supabaseClient.auth.signInWithIdToken({
-        provider: 'google',
-        token: response.credential,
-        nonce: CURRENT_RAW_NONCE
-      });
-
-      if (error) {
-        document.getElementById('overlay-loading').style.display = 'none';
-        document.getElementById('login-screen').style.display = 'flex';
-        document.getElementById('login-error').innerText = "Erro no login: " + error.message; 
-        window.fazerLogout();
-        return;
-      }
-
-      USER_TOKEN = response.credential;
-      localStorage.setItem(KEY_TOKEN, USER_TOKEN);
-      localStorage.setItem(KEY_LAST_ACTIVE, Date.now());
-
-      if (data.user?.email) document.getElementById('lblUserEmail').innerText = data.user.email;
-
-      const modalRenovacaoEl = document.getElementById('modalRenovarSessao');
-      const bsModal = bootstrap.Modal.getInstance(modalRenovacaoEl);
-      if (bsModal && modalRenovacaoEl.classList.contains('show')) {
-         bsModal.hide();
-         iniciarMonitoramentoInatividade();
-         
-         const alerta = document.createElement('div');
-         alerta.className = "alert alert-success position-fixed bottom-0 end-0 m-3";
-         alerta.style.zIndex = "10000";
-         alerta.innerHTML = '<i class="fas fa-check-circle me-2"></i> Sessão renovada!';
-         document.body.appendChild(alerta);
-         setTimeout(() => alerta.remove(), 4000);
-         return; 
-      }
-
-      try {
-        const { data: permData, error: permError } = await supabaseClient
-          .from('usuarios_permitidos')
-          .select('email');
-      
-        if (permError || !permData || permData.length === 0) {
-          throw new Error("Acesso negado. Seu e-mail não está na lista de usuários autorizados.");
-        }
-
-        await window.inicializarApp();
-    
-        document.getElementById('overlay-loading').style.display = 'none';
-        document.getElementById('app-container').style.display = 'block';
-        iniciarMonitoramentoInatividade();
-      } catch (e) {
-        document.getElementById('overlay-loading').style.display = 'none';
-        document.getElementById('login-screen').style.display = 'flex';
-        document.getElementById('login-error').innerText = "Erro do Banco: " + (e.message || JSON.stringify(e)); 
-        window.fazerLogout();
-      }
-    }
- 
-    window.fazerLogout = async function() {
-      await supabaseClient.auth.signOut();
-      USER_TOKEN = null; DADOS_CACHE = {}; DADOS_RELATORIO_ATUAL = null; DADOS_NOTAS_ATUAL = null;
-      localStorage.removeItem(KEY_TOKEN); localStorage.removeItem(KEY_LAST_ACTIVE);
-      if (TIMER_CHECK) clearInterval(TIMER_CHECK);
-      
-      document.documentElement.removeAttribute('data-session');
-      window.limparTela();
-
-      document.getElementById('selAno').innerHTML = '<option value="" selected disabled>Carregando...</option>';
-      document.getElementById('selTurma').disabled = true;
-      document.getElementById('selAluno').disabled = true;
-
-      document.getElementById('app-container').style.display = 'none';
-      document.getElementById('login-screen').style.display = 'flex';
-      
-      BOTAO_JA_RENDERIZADO = false;
-      tentarRenderizarBotao();
-      if (window.google) google.accounts.id.disableAutoSelect();
-    };
-
-    window.mostrarModalRenovacao = async function(motivo = 'api') {
-       const titulo = document.getElementById('titulo-renovacao');
-       const texto = document.getElementById('texto-renovacao');
-       const icone = document.getElementById('icone-renovacao');
-
-       if (motivo === 'inativo') {
-           if (icone) icone.className = "fas fa-bed fa-3x mb-3 text-warning";
-           if (titulo) titulo.innerText = "Você está aí?";
-           if (texto) texto.innerText = "Sua sessão foi suspensa devido a 25 minutos de inatividade. Confirme seu acesso para continuar de onde parou.";
-       } else {
-           if (icone) icone.className = "fas fa-hourglass-end fa-3x mb-3 text-warning";
-           if (titulo) titulo.innerText = "Sessão Expirada";
-           if (texto) texto.innerText = "Por segurança, a sessão expirou. Clique abaixo para renovar o acesso sem perder seus dados na tela.";
-       }
-
-       const modalEl = document.getElementById('modalRenovarSessao');
-       let bsModal = bootstrap.Modal.getInstance(modalEl);
-       if (!bsModal) bsModal = new bootstrap.Modal(modalEl);
-       bsModal.show();
-
-       const nonces = await gerarNonces();
-       CURRENT_RAW_NONCE = nonces.raw; 
-       google.accounts.id.initialize({
-          client_id: CLIENT_ID_GOOGLE,
-          callback: handleCredentialResponse,
-          nonce: nonces.hashed 
-       });
-
-       if (window.google) {
-           google.accounts.id.renderButton(
-              document.getElementById("btn-google-renew-area"),
-              { theme: "outline", size: "large", shape: "pill", width: 250 }
-           );
-       }
-    };
-
-
-    // =========================================================
-    // 4. INICIALIZAÇÃO DA PÁGINA
+    // 3. AUTENTICAÇÃO E INATIVIDADE
     // =========================================================
     window.onload = async function() {
       try {
@@ -716,38 +449,59 @@
         window.carregarConfig();
       } catch(e) {}
 
-      if (verificarSessaoSalva()) {
-        const { data: { session } } = await supabaseClient.auth.getSession();
-        if (!session) { window.fazerLogout(); return; }
+      const { data: { session }, error } = await supabaseClient.auth.getSession();
 
-        if (session.user?.email) document.getElementById('lblUserEmail').innerText = session.user.email;
+      if (error || !session) {
+        window.location.replace("index.html"); // Retorna para tela de login
+        return;
+      }
 
-        document.getElementById('login-screen').style.display = 'none';
-        document.getElementById('overlay-loading').style.display = 'flex';
-        
-        try {
-          const { data: permData, error: permError } = await supabaseClient.from('usuarios_permitidos').select('email');
-          if (permError || !permData || permData.length === 0) throw new Error("Acesso negado.");
-           
-          await window.inicializarApp();
-          
-          document.documentElement.removeAttribute('data-session');
-          document.getElementById('overlay-loading').style.display = 'none';
-          document.getElementById('app-container').style.display = 'block';
-          iniciarMonitoramentoInatividade();
-        } catch(e) {
-          document.getElementById('login-error').innerText = "Erro do Banco: " + (e.message || JSON.stringify(e));
-          window.fazerLogout();
+      try {
+        const { data: permData, error: permError } = await supabaseClient
+          .from('usuarios_permitidos')
+          .select('email')
+          .eq('email', session.user.email);
+      
+        if (permError || !permData || permData.length === 0) {
+          throw new Error("Acesso negado. Seu e-mail não está na lista de usuários autorizados.");
         }
+
+        if (document.getElementById('lblUserEmail')) {
+            document.getElementById('lblUserEmail').innerText = session.user.email;
+        }
+
+        await window.inicializarApp();
+    
+        document.getElementById('overlay-loading').style.display = 'none';
+        document.getElementById('app-container').style.display = 'block';
+        reiniciarTimerInatividade();
+
+      } catch (e) {
+        document.getElementById('loading-error').innerText = "Erro: " + (e.message || JSON.stringify(e)); 
+        setTimeout(() => window.fazerLogout(), 3000);
       }
     };
 
+    window.fazerLogout = async function() {
+      await supabaseClient.auth.signOut();
+      window.location.replace("index.html");
+    };
+
+    function reiniciarTimerInatividade() {
+      if (TIMER_INATIVIDADE) clearTimeout(TIMER_INATIVIDADE);
+      TIMER_INATIVIDADE = setTimeout(() => {
+        alert("Sua sessão expirou devido a inatividade.");
+        window.fazerLogout();
+      }, SESSAO_TIMEOUT_MS);
+    }
+
+    document.addEventListener("click", reiniciarTimerInatividade);
+    document.addEventListener("keypress", reiniciarTimerInatividade);
+
 
     // =========================================================
-    // 5. MANIPULAÇÃO DE UI E RENDERIZAÇÃO 
-    //    (Estas funções agora apenas repassam os dados do DataService)
+    // 4. MANIPULAÇÃO DE UI E RENDERIZAÇÃO 
     // =========================================================
-    
     window.limparTela = function() { 
       document.getElementById('resultadoArea').innerHTML = ''; 
       document.getElementById('areaNotas').innerHTML = ''; 
@@ -817,7 +571,6 @@
     };
 
     window.buscarRelatorio = async function() { 
-      atualizarAtividade();
       const ano = document.getElementById('selAno').value; 
       const aluno = document.getElementById('selAluno').value; 
       
@@ -831,7 +584,6 @@
       `; 
       
       try {
-        // Agora delega a busca para a camada DataService
         const dadosMapeados = await DataService.buscarDadosRelatorio(ano, aluno);
         window.exibirCabecalho(dadosMapeados);
       } catch (e) {
@@ -840,7 +592,6 @@
     };
 
     window.carregarTabelaNotas = async function(aluno, oc, trajetoria) { 
-      atualizarAtividade();
       const divNotas = document.getElementById('areaNotas'); 
       divNotas.innerHTML = `
         <div class="text-center mt-4">
@@ -850,7 +601,6 @@
       `; 
       
       try {
-        // Agora delega a busca para a camada DataService
         const tabelaFinal = await DataService.buscarNotas(aluno, oc, trajetoria);
         DADOS_NOTAS_ATUAL = tabelaFinal; 
         window.renderizarTabelaFinal(tabelaFinal, trajetoria); 
@@ -962,7 +712,7 @@
                    <label class="chk-container mt-1" style="cursor: pointer;">
                       <input type="checkbox" class="form-check-input chk-obs-item" checked value="${safe(t.obs)}" onchange="window.atualizarEstadoObs()">
                    </label>
-                   <span class="small" style="color: var(--text-secondary); line-height: 1.4;"><strong>${safe(t.ano)}:</strong> ${safe(t.obs)}</span>
+                   <span class="small" style="color: var(--text-secondary); line-height: 1.4;"><strong>${safe(t.ano)}:</strong>${safe(t.obs)}</span>
                 </div>
               `).join('')}
               ${!temObs ? '<span class="small style="color: var(--text-secondary);" fst-italic ms-1">Nenhuma observação registrada.</span>' : ''}
@@ -1033,7 +783,7 @@
 
 
     // =========================================================
-    // 6. UTILITÁRIOS (Helpers, Tema, Interações)
+    // 6. UTILITÁRIOS (Helpers, Tema, Interações, Copiar)
     // =========================================================
     window.escapeHTML = function(str) {
       if (str === null || str === undefined || str === "") return "";
@@ -1117,7 +867,6 @@
       return valor + tabs; 
     };    
     
-    // Funções de Interação de Checkboxes
     let frameVisualUpdate = null;
 
     window.atualizarVisualMatriz = function() {
@@ -1231,7 +980,6 @@
       }
     };
 
-    // Funções de Cópia
     window.copiarNotas = function(btnElement) { 
       if (!DADOS_NOTAS_ATUAL) { alert("Erro: Dados não carregados na memória."); return; }
       try {
@@ -1343,6 +1091,5 @@
     };
   </script>
 
-  <script src="https://accounts.google.com/gsi/client" async defer onload="window.onGoogleLibraryLoad()"></script>
 </body>
 </html>
