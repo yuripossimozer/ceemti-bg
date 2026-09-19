@@ -438,6 +438,18 @@
 
 
     // =========================================================
+    // BLOQUEIO DO BOTÃO VOLTAR (BFCache)
+    // =========================================================
+    window.addEventListener("pageshow", async (event) => {
+      if (event.persisted) {
+        const { data: { user } } = await supabaseClient.auth.getUser();
+        if (!user) {
+          window.location.replace("index.html");
+        }
+      }
+    });
+
+    // =========================================================
     // 3. AUTENTICAÇÃO E INATIVIDADE
     // =========================================================
     window.onload = async function() {
@@ -449,29 +461,29 @@
         window.carregarConfig();
       } catch(e) {}
 
-      const { data: { session }, error } = await supabaseClient.auth.getSession();
-
-      if (error || !session) {
-        window.location.replace("index.html"); 
-        return;
-      }
-
       if (window.location.hash) {
         window.history.replaceState(null, document.title, window.location.pathname + window.location.search);
+      }
+
+      const { data: { user }, error } = await supabaseClient.auth.getUser();
+
+      if (error || !user) {
+        window.location.replace("index.html");
+        return;
       }
 
       try {
         const { data: permData, error: permError } = await supabaseClient
           .from('usuarios_permitidos')
           .select('email')
-          .eq('email', session.user.email);
+          .eq('email', user.email);
       
         if (permError || !permData || permData.length === 0) {
-          throw new Error("Acesso negado. Seu e-mail não está na lista de usuários autorizados.");
+          throw new Error("USUÁRIO NÃO AUTORIZADO.");
         }
 
         if (document.getElementById('lblUserEmail')) {
-            document.getElementById('lblUserEmail').innerText = session.user.email;
+            document.getElementById('lblUserEmail').innerText = user.email;
         }
 
         await window.inicializarApp();
@@ -481,11 +493,11 @@
         reiniciarTimerInatividade();
 
       } catch (e) {
-        document.getElementById('loading-error').innerText = "Erro: " + (e.message || JSON.stringify(e)); 
+        document.getElementById('loading-error').innerText = (e.message || JSON.stringify(e)); 
         setTimeout(() => window.fazerLogout(), 3000);
       }
     };
-
+    
     window.fazerLogout = async function() {
       await supabaseClient.auth.signOut();
       window.location.replace("index.html");
