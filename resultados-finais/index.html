@@ -178,13 +178,13 @@
 
       if (erro === 'nao_autorizado') {
         mensagemHTML = `
-          <div class="alert alert-danger d-flex align-items-center" style="border-radius: 12px; text-align: center; font-size: 0.9rem;" role="alert">
+          <div class="alert alert-danger d-flex align-items-center justify-content-center" style="border-radius: 12px; font-size: 0.9rem;" role="alert">
               <strong>USUÁRIO NÃO AUTORIZADO</strong>
           </div>
         `;
       } else if (erro === 'expirado') {
         mensagemHTML = `
-          <div class="alert alert-warning d-flex align-items-center" style="border-radius: 12px; text-align: center; font-size: 0.9rem;" role="alert">
+          <div class="alert alert-warning d-flex align-items-center justify-content-center" style="border-radius: 12px; font-size: 0.9rem;" role="alert">
               <strong>SESSÃO EXPIRADA</strong>
           </div>
         `;
