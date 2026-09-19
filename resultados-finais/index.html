@@ -127,6 +127,8 @@
         <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" alt="Google Logo">
         Continuar com o Google
       </button>
+
+      <div id="mensagem-alerta" class="mt-3"></div>
       
       <div id="login-error" class="text-danger small fw-bold mt-3 text-center"></div>
       <a href="../index.html" class="mt-4 hover-link">
@@ -163,6 +165,46 @@
       document.getElementById('login-error').innerText = "Erro ao conectar: " + error.message;
     }
   }
+</script>
+  
+<script>
+  window.addEventListener('DOMContentLoaded', () => {
+    const params = new URLSearchParams(window.location.search);
+    const erro = params.get('erro');
+    const container = document.getElementById('mensagem-alerta');
+
+    if (erro && container) {
+      let mensagemHTML = '';
+
+      if (erro === 'nao_autorizado') {
+        mensagemHTML = `
+          <div class="alert alert-danger d-flex align-items-center" style="border-radius: 12px; font-size: 0.9rem;" role="alert">
+            <i class="fas fa-exclamation-triangle me-2 fs-5"></i>
+            <div>
+              <strong>Acesso Negado!</strong><br>
+              Seu e-mail não está na lista de usuários autorizados. Contate o administrador.
+            </div>
+          </div>
+        `;
+      } else if (erro === 'expirado') {
+        mensagemHTML = `
+          <div class="alert alert-warning d-flex align-items-center" style="border-radius: 12px; font-size: 0.9rem;" role="alert">
+            <i class="fas fa-clock me-2 fs-5"></i>
+            <div>
+              <strong>Sessão Expirada!</strong><br>
+              Você ficou inativo por muito tempo. Por segurança, faça login novamente.
+            </div>
+          </div>
+        `;
+      }
+
+      if (mensagemHTML !== '') {
+        container.innerHTML = mensagemHTML;
+        
+        window.history.replaceState(null, document.title, window.location.pathname);
+      }
+    }
+  });
 </script>
 </body>
 </html>
