@@ -48,16 +48,19 @@
       --text-secondary: #c4c7c5;
     }
 
+    html { 
+      width: 100%; 
+      overflow-x: hidden; 
+    }
+    
     body {
+      width: 100%;
+      min-height: 100dvh;
       background-color: var(--background);
       color: var(--text-main);
       font-family: 'Roboto', sans-serif;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      min-height: 100vh;
-      margin: 0;
       transition: background-color 0.3s ease, color 0.3s ease;
+      padding-bottom: 60px;
       -webkit-font-smoothing: antialiased;
     }
 
@@ -75,7 +78,7 @@
       background-color: var(--background);
       color: var(--text-main);
       border: 1px solid var(--outline);
-      border-radius: 100px;
+      border-radius: 22px;
       padding: 10px 24px;
       font-weight: 500;
       display: inline-flex;
