@@ -317,7 +317,7 @@
     const DataService = {
       buscarAnos: async function() {
         const { data, error } = await supabaseClient
-          .from('vw_hierarquia_filtros')
+          .from('turmas')
           .select('ano');
 
         if (error) throw error;
@@ -326,12 +326,12 @@
 
       buscarTurmas: async function(ano) {
         const { data, error } = await supabaseClient
-          .from('vw_hierarquia_filtros')
-          .select('turma')
+          .from('turmas')
+          .select('nome')
           .eq('ano', ano);
 
         if (error) throw error;
-        return [...new Set(data.map(item => item.turma))].sort();
+        return [...new Set(data.map(item => item.nome))].sort();
       },
 
       buscarAlunos: async function(ano, turma) {
