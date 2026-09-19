@@ -179,20 +179,14 @@
       if (erro === 'nao_autorizado') {
         mensagemHTML = `
           <div class="alert alert-danger d-flex align-items-center" style="border-radius: 12px; font-size: 0.9rem;" role="alert">
-            <i class="fas fa-exclamation-triangle me-2 fs-5"></i>
-            <div>
-              <strong>Acesso Negado!</strong><br>
-              Seu e-mail não está na lista de usuários autorizados. Contate o administrador.
-            </div>
+              <strong>USUÁRIO NÃO AUTORIZADO</strong>
           </div>
         `;
       } else if (erro === 'expirado') {
         mensagemHTML = `
           <div class="alert alert-warning d-flex align-items-center" style="border-radius: 12px; font-size: 0.9rem;" role="alert">
-            <i class="fas fa-clock me-2 fs-5"></i>
             <div>
-              <strong>Sessão Expirada!</strong><br>
-              Você ficou inativo por muito tempo. Por segurança, faça login novamente.
+              <strong>SESSÃO EXPIRADA</strong>
             </div>
           </div>
         `;
