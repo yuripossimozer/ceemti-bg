@@ -633,8 +633,7 @@
           throw new Error("Acesso negado. Seu e-mail não está na lista de usuários autorizados.");
         }
 
-        const hierarquia = await DataService.buscarHierarquia();
-        window.inicializarApp(hierarquia);
+        await window.inicializarApp();
     
         document.getElementById('overlay-loading').style.display = 'none';
         document.getElementById('app-container').style.display = 'block';
@@ -730,8 +729,7 @@
           const { data: permData, error: permError } = await supabaseClient.from('usuarios_permitidos').select('email');
           if (permError || !permData || permData.length === 0) throw new Error("Acesso negado.");
            
-          const hierarquia = await DataService.buscarHierarquia();
-          window.inicializarApp(hierarquia);
+          await window.inicializarApp();
           
           document.documentElement.removeAttribute('data-session');
           document.getElementById('overlay-loading').style.display = 'none';
@@ -759,12 +757,15 @@
 
     window.inicializarApp = async function() { 
       const selAno = document.getElementById('selAno'); 
-      const anos = await DataService.buscarAnos();
-      
-      selAno.innerHTML = '<option value="" selected disabled>Selecione</option>'; 
-      anos.forEach(ano => { 
-        let opt = document.createElement('option'); opt.value = ano; opt.text = ano; selAno.appendChild(opt); 
-      }); 
+      try {
+        const anos = await DataService.buscarAnos(); 
+        selAno.innerHTML = '<option value="" selected disabled>Selecione</option>'; 
+        anos.forEach(ano => { 
+          let opt = document.createElement('option'); opt.value = ano; opt.text = ano; selAno.appendChild(opt); 
+        });
+      } catch (e) {
+        selAno.innerHTML = '<option value="" disabled>Erro ao carregar</option>';
+      }
     };
 
     window.aoMudarAno = async function() { 
@@ -780,13 +781,16 @@
       
       if (!ano) return; 
       
-      const turmas = await DataService.buscarTurmas(ano);
-      
-      selTurma.innerHTML = '<option value="" selected disabled>Selecione</option>'; 
-      turmas.forEach(t => { 
-        let opt = document.createElement('option'); opt.value = t; opt.text = t; selTurma.appendChild(opt); 
-      }); 
-      selTurma.disabled = false; 
+      try {
+        const turmas = await DataService.buscarTurmas(ano); 
+        selTurma.innerHTML = '<option value="" selected disabled>Selecione</option>'; 
+        turmas.forEach(t => { 
+          let opt = document.createElement('option'); opt.value = t; opt.text = t; selTurma.appendChild(opt); 
+        }); 
+        selTurma.disabled = false; 
+      } catch (e) {
+        selTurma.innerHTML = '<option value="" disabled>Erro ao carregar</option>';
+      }
     };
 
     window.aoMudarTurma = async function() { 
@@ -800,13 +804,16 @@
       
       if (!ano || !turma) return; 
       
-      const alunos = await DataService.buscarAlunos(ano, turma);
-      
-      selAluno.innerHTML = '<option value="" selected disabled>Selecione</option>'; 
-      alunos.forEach(a => { 
-        let opt = document.createElement('option'); opt.value = a; opt.text = a; selAluno.appendChild(opt); 
-      }); 
-      selAluno.disabled = false; 
+      try {
+        const alunos = await DataService.buscarAlunos(ano, turma); 
+        selAluno.innerHTML = '<option value="" selected disabled>Selecione</option>'; 
+        alunos.forEach(a => { 
+          let opt = document.createElement('option'); opt.value = a; opt.text = a; selAluno.appendChild(opt); 
+        }); 
+        selAluno.disabled = false;
+      } catch (e) {
+        selAluno.innerHTML = '<option value="" disabled>Erro ao carregar</option>';
+      }
     };
 
     window.buscarRelatorio = async function() { 
