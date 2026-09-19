@@ -4,36 +4,77 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Resultados Finais</title>
+  
   <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
   <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-  <!-- SUPABASE JS SDK -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
+  <script>
+    (function() {
+      try {
+        const savedTheme = localStorage.getItem('theme');
+        if (savedTheme === 'dark') {
+          document.documentElement.setAttribute('data-theme', 'dark');
+        }
+      } catch (e) { 
+        console.error(e); 
+      }
+    })();
+  </script>
+
   <style>
+    /* =========================================
+       VARIÁVEIS & TEMA
+       ========================================= */
+    :root {
+      --primary: #005fa4;
+      --background: #fdfcff;
+      --surface-container: #f0f4f9;
+      --outline: #74777f;
+      --outline-variant: #c4c7cf;
+      --text-main: #1a1c1e;
+      --text-secondary: #3b3f46;
+      --radius-card: 24px;
+    }
+
+    [data-theme="dark"] {
+      --primary: #a8c7fa;
+      --background: #111315;
+      --surface-container: #1d2024;
+      --outline: #8e9099;
+      --outline-variant: #44474e;
+      --text-main: #e2e2e6;
+      --text-secondary: #c4c7c5;
+    }
+
     body {
-      background-color: #f0f4f9;
+      background-color: var(--background);
+      color: var(--text-main);
       font-family: 'Roboto', sans-serif;
       display: flex;
       justify-content: center;
       align-items: center;
-      height: 100vh;
+      min-height: 100vh;
       margin: 0;
+      transition: background-color 0.3s ease, color 0.3s ease;
+      -webkit-font-smoothing: antialiased;
     }
-    .login-card {
-      background-color: #ffffff;
-      border-radius: 24px;
-      padding: 2.5rem;
-      box-shadow: 0 4px 15px rgba(0,0,0,0.05);
-      text-align: center;
+
+    .m-card {
+      background-color: var(--surface-container);
+      border-radius: var(--radius-card);
+      padding: 3rem !important; /* Ajuste para p-5 do Bootstrap */
+      border: 1px solid var(--outline-variant);
       max-width: 400px;
       width: 90%;
-      border: 1px solid #c4c7cf;
+      text-align: center;
     }
+
     .btn-google {
-      background-color: #ffffff;
-      color: #3c4043;
-      border: 1px solid #dadce0;
+      background-color: var(--background);
+      color: var(--text-main);
+      border: 1px solid var(--outline);
       border-radius: 100px;
       padding: 10px 24px;
       font-weight: 500;
@@ -44,34 +85,43 @@
       transition: background-color 0.2s, box-shadow 0.2s;
       cursor: pointer;
       width: 100%;
+      max-width: 250px;
       justify-content: center;
     }
+
     .btn-google:hover {
-      background-color: #f8f9fa;
-      box-shadow: 0 1px 3px rgba(60,64,67,0.3);
+      background-color: var(--surface-container);
     }
-    .btn-google img { width: 20px; height: 20px; }
+
+    .btn-google img { 
+      width: 20px; 
+      height: 20px; 
+    }
   </style>
 </head>
 <body>
 
-  <div class="login-card">
-    <i class="fas fa-graduation-cap fa-3x mb-3" style="color: #005fa4"></i>
-    <h4 class="mb-2">Acesso Restrito</h4>
-    <p class="text-secondary small mb-4">Faça login com sua conta institucional para acessar.</p>
+  <div class="m-card">
+    <div class="text-center mb-4">
+       <i class="fas fa-graduation-cap fa-3x mb-3" style="color: var(--primary)"></i>
+       <h4 class="mb-2">Acesso Restrito</h4>
+       <p class="small mb-0" style="color: var(--text-secondary);">Faça login com sua conta institucional para acessar.</p>
+    </div>
     
-    <button onclick="fazerLogin()" class="btn-google">
-      <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" alt="Google Logo">
-      Continuar com o Google
-    </button>
-    <div id="login-error" class="text-danger small fw-bold mt-3"></div>
+    <div class="d-flex flex-column align-items-center w-100">
+      <button onclick="fazerLogin()" class="btn-google">
+        <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" alt="Google Logo">
+        Continuar com o Google
+      </button>
+      
+      <div id="login-error" class="text-danger small fw-bold mt-3 text-center"></div>
+    </div>
   </div>
 
   <script>
   const SUPABASE_URL = "https://gtawjrszrzmuftzjoqyk.supabase.co";
   const SUPABASE_ANON_KEY = "sb_publishable_k7C3tn6q8LaJrco8GSdQ7A_l2qJQxIb";
   
-  // Alterado para supabaseClient para evitar conflito com o SDK global
   const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
   window.onload = async function() {
@@ -82,7 +132,6 @@
   };
 
   async function fazerLogin() {
-    // Calcula a URL base dinamicamente, mantendo o nome do repositório no GitHub Pages
     let currentUrl = window.location.origin + window.location.pathname;
     let redirectUrl = currentUrl.replace('index.html', '') + 'resultados.html';
 
