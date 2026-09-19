@@ -127,6 +127,10 @@
         <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" alt="Google Logo">
         Continuar com o Google
       </button>
+      <button onclick="fazerLoginPasskey()" class="btn-google mt-2" id="btn-login-passkey">
+        <i class="fas fa-fingerprint" style="font-size: 1.2rem; color: var(--primary);"></i>
+        Continuar com Passkey
+      </button>
 
       <div id="mensagem-alerta" class="mt-3 w-100"></div>
       
@@ -141,7 +145,11 @@
   const SUPABASE_URL = "https://gtawjrszrzmuftzjoqyk.supabase.co";
   const SUPABASE_ANON_KEY = "sb_publishable_k7C3tn6q8LaJrco8GSdQ7A_l2qJQxIb";
   
-  const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+  const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
+    auth: {
+      experimental: { passkey: true }
+    }
+  });
 
   window.onload = async function() {
     const { data: { session } } = await supabaseClient.auth.getSession();
@@ -164,7 +172,32 @@
     if (error) {
       document.getElementById('login-error').innerText = "Erro ao conectar: " + error.message;
     }
-  }
+  };
+
+  async function fazerLoginPasskey() {
+    const btn = document.getElementById('btn-login-passkey');
+    const originalText = btn.innerHTML;
+  
+    btn.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true" style="margin-right: 8px;"></span> Autenticando...';
+    btn.style.pointerEvents = 'none';
+    document.getElementById('login-error').innerText = "";
+
+    try {
+      const { data, error } = await supabaseClient.auth.signInWithPasskey();
+    
+      if (error) {
+        document.getElementById('login-error').innerText = "Erro ao entrar com Passkey: " + error.message;
+        btn.innerHTML = originalText;
+        btn.style.pointerEvents = 'auto';
+      } else {
+        window.location.href = 'resultados.html';
+      }
+    } catch (err) {
+      document.getElementById('login-error').innerText = "Erro inesperado: " + err.message;
+      btn.innerHTML = originalText;
+      btn.style.pointerEvents = 'auto';
+    }
+  };
 </script>
   
 <script>
