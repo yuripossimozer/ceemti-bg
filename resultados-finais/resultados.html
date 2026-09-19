@@ -480,14 +480,14 @@
         return;
       }
 
-      try {
-        const { data: permData, error: permError } = await supabaseClient
+      const { data: permData, error: permError } = await supabaseClient
           .from('usuarios_permitidos')
           .select('email')
           .eq('email', user.email);
       
         if (permError || !permData || permData.length === 0) {
-          throw new Error("USUÁRIO NÃO AUTORIZADO.");
+          window.fazerLogout('nao_autorizado');
+          return;
         }
 
         if (document.getElementById('lblUserEmail')) {
@@ -506,22 +506,29 @@
       }
     };
     
-    window.fazerLogout = async function() {
+    window.fazerLogout = async function(motivo) {
       document.getElementById('app-container').style.display = 'none';
       const overlay = document.getElementById('overlay-loading');
       overlay.style.display = 'flex';
-      overlay.innerHTML = '<p class="mt-3 small fw-bold" style="color: var(--text-secondary); letter-spacing: 1px;">ENCERRANDO SESSÃO</p>';
+      
+      overlay.innerHTML = `
+        <div class="spinner-border text-primary" style="width: 3rem; height: 3rem;"></div>
+        <p class="mt-3 small fw-bold" style="color: var(--text-secondary); letter-spacing: 1px;">ENCERRANDO SESSÃO</p>
+      `;
 
       await supabaseClient.auth.signOut();
       
-      window.location.replace("index.html");
+      let urlDestino = "index.html";
+      if (motivo === 'expirado') urlDestino += "?erro=expirado";
+      else if (motivo === 'nao_autorizado') urlDestino += "?erro=nao_autorizado";
+      
+      window.location.replace(urlDestino);
     };
 
     function reiniciarTimerInatividade() {
       if (TIMER_INATIVIDADE) clearTimeout(TIMER_INATIVIDADE);
       TIMER_INATIVIDADE = setTimeout(() => {
-        alert("Sua sessão expirou devido a inatividade.");
-        window.fazerLogout();
+        window.fazerLogout('expirado');
       }, SESSAO_TIMEOUT_MS);
     }
 
