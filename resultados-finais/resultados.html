@@ -452,8 +452,12 @@
       const { data: { session }, error } = await supabaseClient.auth.getSession();
 
       if (error || !session) {
-        window.location.replace("index.html"); // Retorna para tela de login
+        window.location.replace("index.html"); 
         return;
+      }
+
+      if (window.location.hash) {
+        window.history.replaceState(null, document.title, window.location.pathname + window.location.search);
       }
 
       try {
