@@ -454,7 +454,7 @@
     // 3. AUTENTICAÇÃO E INATIVIDADE
     // =========================================================
     supabaseClient.auth.onAuthStateChange((event, session) => {
-      if (event === 'SIGNED_OUT' || !session) {
+      if ((event === 'SIGNED_OUT' || !session) && !FAZENDO_LOGOUT_MANUAL) {
         document.getElementById('app-container').style.display = 'none';
         window.location.replace("index.html");
       }
@@ -473,18 +473,19 @@
         window.history.replaceState(null, document.title, window.location.pathname + window.location.search);
       }
 
-      const { data: { user }, error } = await supabaseClient.auth.getUser();
+      try { 
+        const { data: { user }, error } = await supabaseClient.auth.getUser();
 
-      if (error || !user) {
-        window.location.replace("index.html");
-        return;
-      }
+        if (error || !user) {
+          window.location.replace("index.html");
+          return;
+        }
 
-      const { data: permData, error: permError } = await supabaseClient
-          .from('usuarios_permitidos')
-          .select('email')
-          .eq('email', user.email);
-      
+        const { data: permData, error: permError } = await supabaseClient
+            .from('usuarios_permitidos')
+            .select('email')
+            .eq('email', user.email);
+        
         if (permError || !permData || permData.length === 0) {
           window.fazerLogout('nao_autorizado');
           return;
@@ -507,6 +508,7 @@
     };
     
     window.fazerLogout = async function(motivo) {
+      FAZENDO_LOGOUT_MANUAL = true; 
       document.getElementById('app-container').style.display = 'none';
       const overlay = document.getElementById('overlay-loading');
       overlay.style.display = 'flex';
