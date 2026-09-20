@@ -16,6 +16,8 @@
   <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
 
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
   <script>
     (function() {
       try {
@@ -25,14 +27,6 @@
         if (savedTheme === 'dark') {
           document.documentElement.setAttribute('data-theme', 'dark');
           if (metaTheme) metaTheme.setAttribute('content', '#111315');
-        }
-
-        const token = localStorage.getItem('appEscolar_token');
-        const lastActive = localStorage.getItem('appEscolar_lastActive');
-        const timeout = 25 * 60 * 1000;
-        
-        if (token && lastActive && (Date.now() - parseInt(lastActive) < timeout)) {
-          document.documentElement.setAttribute('data-session', 'active');
         }
       } catch (e) { 
         console.error(e); 
@@ -89,11 +83,7 @@
     /* =========================================
        ESTRUTURA BASE
        ========================================= */
-    html { 
-      width: 100%; 
-      overflow-x: hidden; 
-    }
-    
+    html { width: 100%; overflow-x: hidden; }
     body {
       width: 100%;
       min-height: 100dvh;
@@ -108,7 +98,6 @@
     /* =========================================
        COMPONENTES UI
        ========================================= */
-       
     .app-bar {
       background-color: var(--surface-container);
       padding: 1rem 1.5rem;
@@ -119,13 +108,7 @@
       margin-bottom: 1.5rem;
       border: 1px solid var(--outline-variant);
     }
-    
-    .app-title { 
-      font-weight: 700; 
-      color: var(--text-secondary); 
-      font-size: 1.25rem; 
-    }
-    
+    .app-title { font-weight: 700; color: var(--text-secondary); font-size: 1.25rem; }
     .m-card {
       background-color: var(--surface-container);
       border-radius: var(--radius-card);
@@ -133,14 +116,12 @@
       border: 1px solid var(--outline-variant);
       margin-bottom: 1.5rem;
     }
-
     .table > tbody > tr > td {
       background-color: transparent !important;
       color: var(--text-main) !important;
       border-color: var(--outline-variant) !important;
       vertical-align: middle;
     }
-    
     .table thead th {
       background-color: var(--bg-header) !important;
       color: var(--text-secondary) !important;
@@ -152,19 +133,11 @@
       white-space: nowrap;
       padding: 12px;
     }
-    
     .table-hover tbody tr:hover td {
       background-color: var(--primary-container) !important;
       color: var(--on-primary-container) !important;
     }
-    
-    .form-label { 
-      font-size: 0.85rem; 
-      color: var(--text-secondary); 
-      font-weight: 500; 
-      margin-left: 4px; 
-    }
-    
+    .form-label { font-size: 0.85rem; color: var(--text-secondary); font-weight: 500; margin-left: 4px; }
     .form-select, .form-control {
       background-color: var(--background);
       border: 1px solid var(--outline);
@@ -172,250 +145,79 @@
       border-radius: 12px;
       padding: 0.75rem 1rem;
     }
-    
-    .form-select:disabled { 
-      background-color: var(--outline-variant); 
-      opacity: 0.4; 
-      border-color: transparent; 
-    }
-
+    .form-select:disabled { background-color: var(--outline-variant); opacity: 0.4; border-color: transparent; }
     .btn-icon {
-      background: transparent; 
-      border: none; 
-      color: var(--text-secondary);
-      font-size: 1.2rem; 
-      width: 40px; 
-      height: 40px; 
-      border-radius: 50%;
-      transition: 0.2s; 
-      display: inline-flex; 
-      align-items: center; 
-      justify-content: center;
+      background: transparent; border: none; color: var(--text-secondary); font-size: 1.2rem; 
+      width: 40px; height: 40px; border-radius: 50%; transition: 0.2s; display: inline-flex; 
+      align-items: center; justify-content: center;
     }
-    
-    .btn-icon:hover { 
-      background-color: var(--primary-container); 
-      color: var(--on-primary-container); 
-    }
-    
+    .btn-icon:hover { background-color: var(--primary-container); color: var(--on-primary-container); }
     .btn-action {
-      background-color: var(--primary); 
-      color: var(--on-primary);
-      border: none; 
-      border-radius: var(--radius-btn);
-      padding: 0.5rem 1.2rem; 
-      font-weight: 500;
-      display: inline-flex; 
-      align-items: center; 
-      gap: 8px;
-      box-shadow: var(--shadow-sm); 
+      background-color: var(--primary); color: var(--on-primary); border: none; 
+      border-radius: var(--radius-btn); padding: 0.5rem 1.2rem; font-weight: 500;
+      display: inline-flex; align-items: center; gap: 8px; box-shadow: var(--shadow-sm); 
       transition: transform 0.2s, box-shadow 0.2s, filter 0.2s;
     }
-    
-    .btn-action:hover { 
-      filter: brightness(1.1); 
-      transform: translateY(-1px); 
-      box-shadow: var(--shadow-md); 
-    }
-    
-    .btn-action.success-state { 
-      background-color: var(--success) !important; 
-      color: var(--on-success) !important; 
-      pointer-events: none; 
-    }
-    
-    .btn-action.btn-sm { 
-      font-size: 0.75rem; 
-      padding: 0.25rem 0.8rem; 
-    }
-
-    a.btn-icon { 
-      text-decoration: none; 
-      color: var(--text-secondary);
-    }
-    
-    a.btn-icon:hover { 
-      color: var(--on-primary-container); 
-    }
-
-    .hover-link:hover {
-    color: var(--on-primary-container) !important;
-    }
-
+    .btn-action:hover { filter: brightness(1.1); transform: translateY(-1px); box-shadow: var(--shadow-md); }
+    .btn-action.success-state { background-color: var(--success) !important; color: var(--on-success) !important; pointer-events: none; }
+    .btn-action.btn-sm { font-size: 0.75rem; padding: 0.25rem 0.8rem; }
+    a.btn-icon { text-decoration: none; color: var(--text-secondary); }
+    a.btn-icon:hover { color: var(--on-primary-container); }
+    .hover-link:hover { color: var(--on-primary-container) !important; }
     .meta-tag {
-      display: inline-flex; 
-      align-items: center; 
-      gap: 6px;
-      padding: 4px 12px; 
-      border-radius: 8px;
-      border: 1px solid var(--outline-variant);
-      color: var(--text-secondary); 
-      font-size: 0.8rem; 
-      font-weight: 500;
+      display: inline-flex; align-items: center; gap: 6px; padding: 4px 12px; 
+      border-radius: 8px; border: 1px solid var(--outline-variant);
+      color: var(--text-secondary); font-size: 0.8rem; font-weight: 500;
     }
-    
-    .meta-tag i { 
-      color: var(--primary); 
-    }
-
-    .modal-content { 
-      background-color: var(--surface-container); 
-      color: var(--text-main); 
-      border: 1px solid var(--outline-variant); 
-      border-radius: var(--radius-card); 
-    }
-    
-    .modal-header, .modal-footer { 
-      border-color: var(--outline-variant); 
-    }
-    
-    .btn-close { 
-      filter: invert(0.5); 
-    } 
-    
-    [data-theme="dark"] .btn-close { 
-      filter: invert(1); 
-    }
-
-    .chk-container {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      justify-content: center;
-    }
-    
-    .chk-container.start {
-      justify-content: flex-start;
-    }
-    
-    .chk-container .form-check-input {
-      margin: 0;
-      cursor: pointer;
-      width: 18px;
-      height: 18px;
-      border: 1px solid var(--outline);
-    }
-    
-    .table .form-check-input:checked {
-      background-color: var(--primary);
-      border-color: var(--primary);
-    }
-
-    .form-check-input:checked, 
-    .form-check-input:indeterminate {
-      background-color: var(--primary) !important;
-      border-color: var(--primary) !important;
-    }
-    
-    .form-check-input:focus {
-      box-shadow: 0 0 0 0.25rem var(--table-stripe);
-      border-color: var(--primary);
-    }    
-    
+    .meta-tag i { color: var(--primary); }
+    .modal-content { background-color: var(--surface-container); color: var(--text-main); border: 1px solid var(--outline-variant); border-radius: var(--radius-card); }
+    .modal-header, .modal-footer { border-color: var(--outline-variant); }
+    .btn-close { filter: invert(0.5); } 
+    [data-theme="dark"] .btn-close { filter: invert(1); }
+    .chk-container { display: flex; align-items: center; gap: 8px; justify-content: center; }
+    .chk-container.start { justify-content: flex-start; }
+    .chk-container .form-check-input { margin: 0; cursor: pointer; width: 18px; height: 18px; border: 1px solid var(--outline); }
+    .table .form-check-input:checked { background-color: var(--primary); border-color: var(--primary); }
+    .form-check-input:checked, .form-check-input:indeterminate { background-color: var(--primary) !important; border-color: var(--primary) !important; }
+    .form-check-input:focus { box-shadow: 0 0 0 0.25rem var(--table-stripe); border-color: var(--primary); }    
     .table tbody td.highlight-cell {
-      background-color: var(--primary-container) !important;
-      color: var(--on-primary-container) !important;
-      transition: background-color 0.2s;
-      border-bottom-color: rgba(255,255,255,0.1) !important;
+      background-color: var(--primary-container) !important; color: var(--on-primary-container) !important;
+      transition: background-color 0.2s; border-bottom-color: rgba(255,255,255,0.1) !important;
     }
 
     /* =========================================
-       TELAS DE LOGIN E LOADING
+       TELA DE LOADING E CONTAINER PRINCIPAL
        ========================================= */
-    #login-screen {
-      position: fixed; 
-      inset: 0; 
-      width: 100%; 
-      height: 100dvh;
-      background: var(--background); 
-      z-index: 10000;
-      display: flex; 
-      flex-direction: column; 
-      justify-content: center; 
-      align-items: center;
-    }
-    
     #overlay-loading {
-      position: fixed; 
-      inset: 0; 
-      background: var(--background);
-      z-index: 9999; 
-      display: flex; 
-      flex-direction: column;
-      justify-content: center; 
-      align-items: center;
+      position: fixed; inset: 0; background: var(--background); z-index: 9999; 
+      display: flex; flex-direction: column; justify-content: center; align-items: center;
     }
-    
-    html[data-session="active"] #login-screen { display: none !important; }
-    html[data-session="active"] #overlay-loading { display: flex !important; }
     #app-container { display: none; padding-top: 1rem; }
-    html[data-session="active"] #app-container { display: block !important; }
-
-    .google-placeholder-rigid {
-      width: 250px; 
-      height: 44px;
-      display: flex; 
-      justify-content: center; 
-      align-items: center;
-      overflow: hidden; 
-      margin-bottom: 1rem; 
-      border-radius: 22px;
-    }
   </style>
 </head>
 <body>
 
   <!-- =========================================
-       TELA DE LOGIN
-       ========================================= -->
-  <div id="login-screen">
-    <div class="m-card p-5" style="border: 1px solid var(--outline-variant); max-width: 400px; width: 90%;">
-      <div class="text-center mb-4">
-         <i class="fas fa-graduation-cap fa-3x mb-3" style="color: var(--primary)"></i>
-         <h4 class="mb-2">Acesso Restrito</h4>
-         <p class="text-secondary small mb-0">Faça login com sua conta institucional para acessar.</p>
-      </div>
-      
-      <div class="d-flex flex-column align-items-center w-100">
-          <div class="google-placeholder-rigid">
-              <div id="btn-google-area"></div>
-          </div>
-          <div id="login-error" class="text-danger small fw-bold text-center"></div>
-          
-          <a href="../index.html" class="mt-4 text-secondary text-decoration-none" style="font-size: 0.9rem; transition: 0.2s;">
-             <i class="fas fa-arrow-left me-1"></i> Voltar ao Início
-          </a>
-      </div>
-    </div>
-  </div>
-
-  <!-- =========================================
        TELA DE CARREGAMENTO (OVERLAY)
        ========================================= -->
-  <div id="overlay-loading" style="display: none;">
+  <div id="overlay-loading">
     <div class="spinner-border text-primary" style="width: 3rem; height: 3rem;"></div>
-    <p class="mt-3 small fw-bold" style="color: var(--text-secondary); letter-spacing: 1px;">CONECTANDO</p>
+    <p class="mt-3 small fw-bold" style="color: var(--text-secondary); letter-spacing: 1px;">AUTENTICANDO</p>
+    <div id="loading-error" class="text-danger small fw-bold mt-2 text-center px-4"></div>
   </div>
 
   <!-- =========================================
        CONTEÚDO PRINCIPAL (APP)
        ========================================= -->
   <div class="container" id="app-container">
-    
     <div class="app-bar">
       <div class="d-flex align-items-center gap-2">
         <span class="app-title">RESULTADOS FINAIS</span>
       </div>
       <div class="d-flex gap-2">
-        <a href="../index.html" class="btn-icon" title="Voltar ao Início">
-          <i class="fas fa-home"></i>
-        </a>
-        <button class="btn-icon" onclick="window.toggleTheme()" title="Alternar Tema">
-          <i class="fas fa-moon" id="icon-theme"></i>
-        </button>
-        <button class="btn-icon" data-bs-toggle="modal" data-bs-target="#modalConfig" title="Configurações">
-          <i class="fas fa-cog"></i>
-        </button>
+        <a href="../index.html" class="btn-icon" title="Voltar ao Início"><i class="fas fa-home"></i></a>
+        <button class="btn-icon" onclick="window.toggleTheme()" title="Alternar Tema"><i class="fas fa-moon" id="icon-theme"></i></button>
+        <button class="btn-icon" data-bs-toggle="modal" data-bs-target="#modalConfig" title="Configurações"><i class="fas fa-cog"></i></button>
       </div>
     </div>
 
@@ -458,7 +260,6 @@
           <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
         </div>
         <div class="modal-body">
-          
           <h6 class="text-secondary small fw-bold text-uppercase mb-3">Exportação (Tabulação)</h6>
           <div class="mb-3">
             <label class="form-label">Mesclar Aproveitamento</label>
@@ -475,7 +276,7 @@
           
           <hr class="my-4" style="border-color: var(--outline-variant);">
           
-          <h6 class="text-secondary small fw-bold text-uppercase mb-3">Conta</h6>
+          <h6 class="text-secondary small fw-bold text-uppercase mb-3">Conta e Autenticação</h6>
           <div class="p-3 rounded d-flex align-items-center justify-content-between" style="border: 1px solid var(--outline-variant);">
              <div class="d-flex align-items-center gap-3">
                 <div class="d-flex align-items-center justify-content-center rounded-circle" style="width: 40px; height: 40px; background-color: var(--primary-container); color: var(--on-primary-container);">
@@ -487,38 +288,26 @@
                 </div>
              </div>
              <button onclick="window.fazerLogout()" class="btn btn-sm btn-outline-danger rounded-pill px-3" data-bs-dismiss="modal">Sair</button>
+          </div><br>
+          <div class="p-3 rounded d-flex flex-column gap-3" style="border: 1px solid var(--outline-variant);">
+             <div class="d-flex align-items-center justify-content-between">
+                <div class="d-flex align-items-center gap-3">
+                   <div class="d-flex align-items-center justify-content-center rounded-circle" style="width: 40px; height: 40px; background-color: var(--primary-container); color: var(--on-primary-container);">
+                     <i class="fas fa-fingerprint"></i>
+                   </div>
+                   <div style="line-height: 1.2;">
+                     <span class="d-block fw-bold" style="font-size: 0.9rem;">Gerenciar Passkeys</span>
+                     <span class="d-block small text-secondary">Adicionar, remover e renomear</span>
+                   </div>
+                </div>
+                <button id="btn-add-passkey" onclick="window.cadastrarPasskey()" class="btn btn-sm btn-outline-primary rounded-pill px-3">+</button>
+             </div>
+   
+             <div id="lista-passkeys" class="d-flex flex-column gap-2 mt-2 pt-3" style="border-top: 1px solid var(--outline-variant); display: none !important;">
+                <div class="text-center small text-secondary py-2 spinner-border spinner-border-sm mx-auto" role="status"></div>
+             </div>
           </div>
-          
         </div>
-      </div>
-    </div>
-  </div>
-
-  <!-- =========================================
-       MODAL: RENOVAÇÃO DE SESSÃO
-       ========================================= -->
-  <div class="modal fade" id="modalRenovarSessao" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1">
-    <div class="modal-dialog modal-dialog-centered">
-      <div class="modal-content text-center p-4">
-        
-        <div class="mb-4">
-          <i id="icone-renovacao" class="fas fa-hourglass-end fa-3x mb-3" style="color: #ffc107;"></i>
-          <h5 id="titulo-renovacao" style="color: var(--text-main); font-weight: 700;">Sessão Expirada</h5>
-          <p id="texto-renovacao" style="color: var(--text-secondary); font-size: 0.9rem;">
-            Por segurança, o Google encerra a sessão a cada 60 minutos. Clique abaixo para renovar o acesso sem perder seus dados na tela.
-          </p>
-        </div>
-        
-        <div class="d-flex flex-column align-items-center w-100">
-           <div class="google-placeholder-rigid">
-               <div id="btn-google-renew-area"></div>
-           </div>
-           
-           <a href="../index.html" onclick="window.fazerLogout()" class="mt-4 text-secondary text-decoration-none hover-link" style="font-size: 0.9rem; transition: 0.2s;">
-              <i class="fas fa-arrow-left me-1"></i> Voltar ao Início
-           </a>
-        </div>
-
       </div>
     </div>
   </div>
@@ -527,222 +316,173 @@
 
   <script>
     // =========================================================
-    // 0. SEGURANÇA
+    // 1. CONFIGURAÇÕES E ESTADO GLOBAL
     // =========================================================
-    window.escapeHTML = function(str) {
-      if (!str) return "";
-      return String(str)
-        .replace(/&/g, "&amp;")
-        .replace(/</g, "&lt;")
-        .replace(/>/g, "&gt;")
-        .replace(/"/g, "&quot;")
-        .replace(/'/g, "&#039;");
-    };
-
-    // =========================================================
-    // 1. CONSTANTES E ESTADO GLOBAL
-    // =========================================================
-    const API_URL = "https://script.google.com/macros/s/AKfycbwjuwuIUaREmo34IOVa4tOC1xiKwLw9ADwFQfsuoVsGUDR03eyRdTmwlWJqMH9lltJnYQ/exec";
-    const CLIENT_ID_GOOGLE = "10938455862-2def58pdbq68jn5encbplrfl5nhcndpl.apps.googleusercontent.com"; 
-    const SESSAO_TIMEOUT_MS = 25 * 60 * 1000; 
-    const KEY_TOKEN = "appEscolar_token";
-    const KEY_LAST_ACTIVE = "appEscolar_lastActive";
-
-    var USER_TOKEN = null;
-    var DADOS_CACHE = {}; 
-    var DADOS_RELATORIO_ATUAL = null; 
-    var DADOS_NOTAS_ATUAL = null; 
-    var TIMER_CHECK = null; 
-    var BOTAO_JA_RENDERIZADO = false;
-
-    // =========================================================
-    // 2. GESTÃO DE SESSÃO & LOGIN GOOGLE
-    // =========================================================
-    function verificarSessaoSalva() {
-      const tokenSalvo = localStorage.getItem(KEY_TOKEN);
-      const lastActive = localStorage.getItem(KEY_LAST_ACTIVE);
-      const agora = Date.now();
-
-      if (tokenSalvo && lastActive && (agora - parseInt(lastActive) < SESSAO_TIMEOUT_MS)) {
-        USER_TOKEN = tokenSalvo;
-        return true;
+    const SUPABASE_URL = "https://gtawjrszrzmuftzjoqyk.supabase.co";
+    const SUPABASE_ANON_KEY = "sb_publishable_k7C3tn6q8LaJrco8GSdQ7A_l2qJQxIb";
+    
+    const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
+      auth: {
+        experimental: { passkey: true }
       }
-      return false;
-    }
+    });
+    
+    let DADOS_RELATORIO_ATUAL = null; 
+    let DADOS_NOTAS_ATUAL = null; 
+    let TIMER_INATIVIDADE = null;
+    const SESSAO_TIMEOUT_MS = 25 * 60 * 1000; // 25 minutos
 
-    function atualizarAtividade() {
-      if (USER_TOKEN) {
-        localStorage.setItem(KEY_LAST_ACTIVE, Date.now());
-      }
-    }
+    // =========================================================
+    // 2. CAMADA DE DADOS (DataService) 
+    // =========================================================
+    const DataService = {
+      buscarAnos: async function() {
+        const { data, error } = await supabaseClient
+          .from('turmas')
+          .select('ano');
 
-    function iniciarMonitoramentoInatividade() {
-      if (TIMER_CHECK) clearInterval(TIMER_CHECK);
-      TIMER_CHECK = setInterval(() => {
-        const lastActive = localStorage.getItem(KEY_LAST_ACTIVE);
-        if (lastActive && (Date.now() - parseInt(lastActive) >= SESSAO_TIMEOUT_MS)) {
-          clearInterval(TIMER_CHECK); 
-          window.mostrarModalRenovacao('inativo');
-        }
-      }, 60 * 1000); 
-    }
+        if (error) throw error;
+        return [...new Set(data.map(item => item.ano))].sort().reverse();
+      },
 
-    window.onGoogleLibraryLoad = function() {
-      tentarRenderizarBotao();
-    };
+      buscarTurmas: async function(ano) {
+        const { data, error } = await supabaseClient
+          .from('turmas')
+          .select('nome')
+          .eq('ano', ano);
 
-    function tentarRenderizarBotao() {
-      if (verificarSessaoSalva() || BOTAO_JA_RENDERIZADO) return;
+        if (error) throw error;
+        return [...new Set(data.map(item => item.nome))].sort();
+      },
 
-      if (window.google) {
-         google.accounts.id.initialize({
-            client_id: CLIENT_ID_GOOGLE,
-            callback: handleCredentialResponse,
-            auto_select: false
-         });
-         
-         google.accounts.id.renderButton(
-            document.getElementById("btn-google-area"),
-            { theme: "outline", size: "large", shape: "pill", width: 250 }
-         );
-         
-         google.accounts.id.prompt(); 
-         BOTAO_JA_RENDERIZADO = true;
-      }
-    }
+      buscarAlunos: async function(ano, turma) {
+        const { data, error } = await supabaseClient
+          .from('vw_hierarquia_filtros')
+          .select('estudante')
+          .eq('ano', ano)
+          .eq('turma', turma);
 
-    window.mostrarModalRenovacao = function(motivo = 'api') {
-       const titulo = document.getElementById('titulo-renovacao');
-       const texto = document.getElementById('texto-renovacao');
-       const icone = document.getElementById('icone-renovacao');
+        if (error) throw error;
+        return [...new Set(data.map(item => item.estudante))].sort();
+      },
 
-       if (motivo === 'inativo') {
-           if (icone) icone.className = "fas fa-bed fa-3x mb-3 text-warning";
-           if (titulo) titulo.innerText = "Você está aí?";
-           if (texto) texto.innerText = "Sua sessão foi suspensa devido a 25 minutos de inatividade. Confirme seu acesso para continuar de onde parou.";
-       } else {
-           if (icone) icone.className = "fas fa-hourglass-end fa-3x mb-3 text-warning";
-           if (titulo) titulo.innerText = "Sessão Expirada";
-           if (texto) texto.innerText = "Por segurança, a sessão expirou. Clique abaixo para renovar o acesso sem perder seus dados na tela.";
-       }
+      buscarDadosRelatorio: async function(anoSelecionado, nomeAluno) {
+        const { data: estData, error: errEst } = await supabaseClient
+          .from('estudantes')
+          .select('id, nome, cd_sistec')
+          .eq('nome', nomeAluno)
+          .single();
 
-       const modalEl = document.getElementById('modalRenovarSessao');
-       let bsModal = bootstrap.Modal.getInstance(modalEl);
-       if (!bsModal) bsModal = new bootstrap.Modal(modalEl);
-       
-       bsModal.show();
+        if (errEst) throw new Error("Estudante não encontrado.");
 
-       google.accounts.id.initialize({
-          client_id: CLIENT_ID_GOOGLE,
-          callback: handleCredentialResponse,
-       });
+        const { data: matData, error: errMat } = await supabaseClient
+          .from('matriculas')
+          .select(`
+            ch_anual, dias_letivos, tot_faltas, porc_faltas, res_final, observacoes,
+            turmas (ano, nome, ocs(codigo))
+          `)
+          .eq('estudante_id', estData.id);
 
-       if (window.google) {
-           google.accounts.id.renderButton(
-              document.getElementById("btn-google-renew-area"),
-              { theme: "outline", size: "large", shape: "pill", width: 250 }
-           );
-       }
-    };
+        if (errMat) throw new Error("Erro ao buscar matrículas.");
 
-    function handleCredentialResponse(response) {
-      USER_TOKEN = response.credential;
-      localStorage.setItem(KEY_TOKEN, USER_TOKEN);
-      localStorage.setItem(KEY_LAST_ACTIVE, Date.now());
+        const oc = matData[0]?.turmas?.ocs?.codigo || "NA";
+        const anoBase = parseInt(anoSelecionado);
+        const trajetoria = [];
 
-      const dadosUser = parseJwt(USER_TOKEN);
-      if (dadosUser?.email) {
-        document.getElementById('lblUserEmail').innerText = dadosUser.email;
-      }
-
-      const modalRenovacaoEl = document.getElementById('modalRenovarSessao');
-      const bsModal = bootstrap.Modal.getInstance(modalRenovacaoEl);
-      if (bsModal && modalRenovacaoEl.classList.contains('show')) {
-         bsModal.hide();
-         
-         iniciarMonitoramentoInatividade();
-         
-         const alerta = document.createElement('div');
-         alerta.className = "alert alert-success position-fixed bottom-0 end-0 m-3";
-         alerta.style.zIndex = "10000";
-         alerta.innerHTML = '<i class="fas fa-check-circle me-2"></i> Sessão renovada! Você já pode realizar a busca novamente.';
-         document.body.appendChild(alerta);
-         setTimeout(() => alerta.remove(), 4000);
-
-          const area = document.getElementById('resultadoArea');
-          if (area && area.innerHTML.includes('fa-user-clock')) {
-              area.innerHTML = `
-                  <div class="text-center p-5">
-                      <i class="fas fa-check-circle fa-2x text-success mb-3"></i>
-                      <p class="small mb-0" style="color: var(--text-secondary);">
-                          Sessão renovada! Você já pode realizar a busca novamente.
-                      </p>
-                  </div>`;
-          }
+        for (let i = 0; i < 3; i++) {
+          let anoB = anoBase + i;
+          let matAno = matData.find(m => m.turmas.ano === anoB);
           
-          const divNotas = document.getElementById('areaNotas');
-          if (divNotas && divNotas.innerHTML.includes('fa-user-clock')) {
-              divNotas.innerHTML = `
-                  <div class="text-center mt-4">
-                      <i class="fas fa-check-circle text-success mb-2"></i>
-                      <p class="small mb-0" style="color: var(--text-secondary);">
-                          Sessão renovada! Você já pode realizar a busca novamente.
-                      </p>
-                  </div>`;
+          if (matAno) {
+            trajetoria.push({ 
+              existe: true, ano: matAno.turmas.ano, turma: matAno.turmas.nome, 
+              ch: matAno.ch_anual, dias: matAno.dias_letivos, faltas: matAno.tot_faltas, 
+              porc: matAno.porc_faltas, res: matAno.res_final, obs: matAno.observacoes 
+            });
+          } else {
+            trajetoria.push({ existe: false, ano: anoB, turma: "-" });
           }
-        
-         return; 
-      }
+        }
 
-      document.getElementById('login-screen').style.display = 'none';
-      document.getElementById('overlay-loading').style.display = 'flex';
+        const anosRegistrados = [...new Set(matData.map(m => m.turmas.ano))].sort((a,b)=>a-b).join(', ');
 
-      chamarAPI('getHierarquiaDados')
-        .then(dados => {
-          window.inicializarApp(dados);
-          document.getElementById('overlay-loading').style.display = 'none';
-          document.getElementById('app-container').style.display = 'block';
-          iniciarMonitoramentoInatividade();
-        })
-        .catch(e => {
-          document.getElementById('overlay-loading').style.display = 'none';
-          document.getElementById('login-screen').style.display = 'flex';
-          document.getElementById('login-error').innerText = e.message; 
-          window.fazerLogout();
+        return { 
+          aluno: estData.nome, 
+          oc: oc, 
+          sistec: estData.cd_sistec, 
+          anosRegistrados: anosRegistrados, 
+          trajetoria: trajetoria 
+        };
+      },
+
+      buscarNotas: async function(nomeAluno, codigoOC, trajetoria) {
+        const { data: ocData } = await supabaseClient.from('ocs').select('id').eq('codigo', codigoOC).single();
+        if (!ocData) throw new Error("OC não encontrada");
+
+        const { data: disciplinas } = await supabaseClient.from('disciplinas').select('nome').eq('oc_id', ocData.id).order('ordem');
+        const nomesDisciplinas = disciplinas.map(d => d.nome);
+
+        const { data: estData } = await supabaseClient.from('estudantes').select('id').eq('nome', nomeAluno).single();
+        const { data: matriculas } = await supabaseClient.from('matriculas').select('id, turmas(ano, nome)').eq('estudante_id', estData.id);
+        const matriculasIds = matriculas.map(m => m.id);
+
+        const { data: notasBD } = await supabaseClient
+          .from('notas')
+          .select(`nota, ch, falta, disciplinas(nome), matricula_id`)
+          .in('matricula_id', matriculasIds);
+
+        const mapaNotas = {};
+        notasBD.forEach(n => {
+            const mat = matriculas.find(m => m.id === n.matricula_id);
+            if (mat && n.disciplinas) {
+                const chave = `${mat.turmas.ano}|${mat.turmas.nome}|${n.disciplinas.nome}`;
+                mapaNotas[chave] = { nota: n.nota, ch: n.ch, falta: n.falta };
+            }
         });
-    }
 
-    window.fazerLogout = function() {
-      USER_TOKEN = null;
-      DADOS_CACHE = {}; 
-      DADOS_RELATORIO_ATUAL = null; 
-      DADOS_NOTAS_ATUAL = null;
-      
-      localStorage.removeItem(KEY_TOKEN);
-      localStorage.removeItem(KEY_LAST_ACTIVE);
-      
-      if (TIMER_CHECK) clearInterval(TIMER_CHECK);
-      
-      document.documentElement.removeAttribute('data-session');
-      window.limparTela();
+        const tabelaFinal = nomesDisciplinas.map(discNome => {
+            let linha = { disciplina: discNome, anos: [] };
+            trajetoria.forEach(t => {
+                if (t.existe) {
+                    const chave = `${t.ano}|${t.turma}|${discNome}`;
+                    linha.anos.push(mapaNotas[chave] || { nota: "-", ch: "-", falta: "-" });
+                } else {
+                    linha.anos.push({ nota: "-", ch: "-", falta: "-" });
+                }
+            });
+            return linha;
+        });
 
-      document.getElementById('selAno').innerHTML = '<option value="" selected disabled>Carregando...</option>';
-      document.getElementById('selTurma').disabled = true;
-      document.getElementById('selAluno').disabled = true;
-
-      document.getElementById('app-container').style.display = 'none';
-      document.getElementById('login-screen').style.display = 'flex';
-      
-      BOTAO_JA_RENDERIZADO = false;
-      tentarRenderizarBotao();
-      
-      if (window.google) google.accounts.id.disableAutoSelect();
+        return tabelaFinal;
+      }
     };
 
+
     // =========================================================
-    // 3. INICIALIZAÇÃO DA PÁGINA
+    // BLOQUEIO DO BOTÃO VOLTAR (BFCache)
     // =========================================================
-    window.onload = function() {
+    window.addEventListener("pageshow", (event) => {
+      if (event.persisted) {
+        supabaseClient.auth.getSession().then(({ data: { session } }) => {
+          if (!session) {
+            document.getElementById('app-container').style.display = 'none';
+            window.location.replace("index.html");
+          }
+        });
+      }
+    });
+
+    // =========================================================
+    // 3. AUTENTICAÇÃO E INATIVIDADE
+    // =========================================================
+    supabaseClient.auth.onAuthStateChange((event, session) => {
+      if ((event === 'SIGNED_OUT' || !session) && !FAZENDO_LOGOUT_MANUAL) {
+        document.getElementById('app-container').style.display = 'none';
+        window.location.replace("index.html");
+      }
+    });
+    
+    window.onload = async function() {
       try {
         if (document.documentElement.getAttribute('data-theme') === 'dark') {
            const icon = document.getElementById('icon-theme');
@@ -751,164 +491,77 @@
         window.carregarConfig();
       } catch(e) {}
 
-      if (verificarSessaoSalva()) {
-        const dadosUser = parseJwt(USER_TOKEN);
-        if (dadosUser?.email) {
-           document.getElementById('lblUserEmail').innerText = dadosUser.email;
+      if (window.location.hash) {
+        window.history.replaceState(null, document.title, window.location.pathname + window.location.search);
+      }
+
+      try { 
+        const { data: { user }, error } = await supabaseClient.auth.getUser();
+
+        if (error || !user) {
+          window.location.replace("index.html");
+          return;
         }
 
-        document.getElementById('login-screen').style.display = 'none';
-        document.getElementById('overlay-loading').style.display = 'flex';
+        const { data: permData, error: permError } = await supabaseClient
+            .from('usuarios_permitidos')
+            .select('email')
+            .eq('email', user.email);
         
-        chamarAPI('getHierarquiaDados')
-          .then(dados => {
-            window.inicializarApp(dados);
-            document.documentElement.removeAttribute('data-session');
-            document.getElementById('overlay-loading').style.display = 'none';
-            document.getElementById('app-container').style.display = 'block';
-            iniciarMonitoramentoInatividade();
-          })
-          .catch(() => window.fazerLogout());
+        if (permError || !permData || permData.length === 0) {
+          window.fazerLogout('nao_autorizado');
+          return;
+        }
+
+        if (document.getElementById('lblUserEmail')) {
+            document.getElementById('lblUserEmail').innerText = user.email;
+        }
+
+        await window.inicializarApp();
+    
+        document.getElementById('overlay-loading').style.display = 'none';
+        document.getElementById('app-container').style.display = 'block';
+        reiniciarTimerInatividade();
+
+      } catch (e) {
+        document.getElementById('loading-error').innerText = (e.message || JSON.stringify(e)); 
+        setTimeout(() => window.fazerLogout(), 3000);
       }
     };
-
-    // =========================================================
-    // 4. UTILITÁRIOS E API
-    // =========================================================
-    function parseJwt(token) {
-      try { 
-        return JSON.parse(decodeURIComponent(window.atob(token.split('.')[1].replace(/-/g, '+').replace(/_/g, '/')).split('').map(c => '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2)).join(''))); 
-      } catch (e) { 
-        return null; 
-      }
-    }
-
-    async function chamarAPI(action, payload = {}) {
-      atualizarAtividade();
-      const bodyData = { userToken: USER_TOKEN, action: action, ...payload };
+    
+    window.fazerLogout = async function(motivo) {
+      FAZENDO_LOGOUT_MANUAL = true; 
+      document.getElementById('app-container').style.display = 'none';
+      const overlay = document.getElementById('overlay-loading');
+      overlay.style.display = 'flex';
       
-      const payloadString = JSON.stringify(bodyData);
-      
-      const formData = new URLSearchParams();
-      formData.append('dados', payloadString);
-      
-      const response = await fetch(API_URL, { 
-        method: "POST", 
-        headers: { "Content-Type": "application/x-www-form-urlencoded" }, 
-        body: formData.toString() 
-      });
-      
-      const responseText = await response.text();
-      let json;
-  
-      try {
-        json = JSON.parse(responseText);
-      } catch (err) {
-        throw new Error("Erro no formato da resposta da API. Tente novamente.");
-      }
-      
-      if (json.error === "TOKEN_EXPIRED") {
-         window.mostrarModalRenovacao('api');
-         throw new Error("TOKEN_EXPIRED");
-      }
+      overlay.innerHTML = `
+        <div class="spinner-border text-primary" style="width: 3rem; height: 3rem;"></div>
+        <p class="mt-3 small fw-bold" style="color: var(--text-secondary); letter-spacing: 1px;">ENCERRANDO SESSÃO</p>
+      `;
 
-      if (json.error) throw new Error(json.error);
-      return json;
-    }
-
-    function hexToRgb(hex) {
-      const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
-      return result ? { 
-        r: parseInt(result[1], 16), 
-        g: parseInt(result[2], 16), 
-        b: parseInt(result[3], 16) 
-      } : null;
-    }
-
-    function rgbToHex(r, g, b) {
-      return "#" + ((1 << 24) + (r << 16) + (g << 8) + b).toString(16).slice(1);
-    }
-
-    function animarMetaCor(corOrigem, corDestino, duration) {
-      const start = hexToRgb(corOrigem);
-      const end = hexToRgb(corDestino);
-      const metaTag = document.getElementById('meta-theme-color');
+      await supabaseClient.auth.signOut();
       
-      if (!start || !end || !metaTag) return;
+      let urlDestino = "index.html";
+      if (motivo === 'expirado') urlDestino += "?erro=expirado";
+      else if (motivo === 'nao_autorizado') urlDestino += "?erro=nao_autorizado";
       
-      let startTime = null;
-
-      function animationStep(timestamp) {
-        if (!startTime) startTime = timestamp;
-        const progress = timestamp - startTime;
-        const percent = Math.min(progress / duration, 1);
-        
-        const r = Math.round(start.r + (end.r - start.r) * percent);
-        const g = Math.round(start.g + (end.g - start.g) * percent);
-        const b = Math.round(start.b + (end.b - start.b) * percent);
-        
-        metaTag.setAttribute('content', rgbToHex(r, g, b));
-        
-        if (progress < duration) window.requestAnimationFrame(animationStep);
-      }
-      window.requestAnimationFrame(animationStep);
-    }
-
-    window.toggleTheme = function() {
-      const htmlTag = document.documentElement;
-      const icon = document.getElementById('icon-theme');
-      const COR_LIGHT = '#fdfcff';
-      const COR_DARK = '#111315';
-      const isDark = htmlTag.getAttribute('data-theme') === 'dark';
-      
-      if (isDark) {
-        htmlTag.removeAttribute('data-theme');
-        if (icon) icon.classList.replace('fa-sun', 'fa-moon');
-        localStorage.setItem('theme', 'light');
-        animarMetaCor(COR_DARK, COR_LIGHT, 300);
-      } else {
-        htmlTag.setAttribute('data-theme', 'dark');
-        if (icon) icon.classList.replace('fa-moon', 'fa-sun');
-        localStorage.setItem('theme', 'dark');
-        animarMetaCor(COR_LIGHT, COR_DARK, 300);
-      }
+      window.location.replace(urlDestino);
     };
 
-    // =========================================================
-    // 5. CONFIGURAÇÕES
-    // =========================================================
-    window.carregarConfig = function() { 
-      try { 
-        const raw = localStorage.getItem('appEscolarConfig'); 
-        const cfg = raw ? JSON.parse(raw) : null; 
-        
-        if (cfg) { 
-          if(document.getElementById('cfgNotas')) document.getElementById('cfgNotas').value = cfg.notas; 
-          if(document.getElementById('cfgSituacao')) document.getElementById('cfgSituacao').value = cfg.situacao; 
-        } else { 
-          window.resetarConfig(); 
-        } 
-      } catch (e) { 
-        window.resetarConfig(); 
-      } 
-    };
+    function reiniciarTimerInatividade() {
+      if (TIMER_INATIVIDADE) clearTimeout(TIMER_INATIVIDADE);
+      TIMER_INATIVIDADE = setTimeout(() => {
+        window.fazerLogout('expirado');
+      }, SESSAO_TIMEOUT_MS);
+    }
 
-    window.salvarConfig = function() { 
-      const config = { 
-        notas: parseInt(document.getElementById('cfgNotas').value) || 3, 
-        situacao: parseInt(document.getElementById('cfgSituacao').value) || 9 
-      }; 
-      localStorage.setItem('appEscolarConfig', JSON.stringify(config)); 
-    };
+    document.addEventListener("click", reiniciarTimerInatividade);
+    document.addEventListener("keypress", reiniciarTimerInatividade);
 
-    window.resetarConfig = function() { 
-      if(document.getElementById('cfgNotas')) document.getElementById('cfgNotas').value = 3; 
-      if(document.getElementById('cfgSituacao')) document.getElementById('cfgSituacao').value = 9; 
-      window.salvarConfig(); 
-    };
 
     // =========================================================
-    // 6. LÓGICA DE UI (DROPDOWNS E TABELAS)
+    // 4. MANIPULAÇÃO DE UI E RENDERIZAÇÃO 
     // =========================================================
     window.limparTela = function() { 
       document.getElementById('resultadoArea').innerHTML = ''; 
@@ -917,71 +570,73 @@
       DADOS_NOTAS_ATUAL = null; 
     };
 
-    window.inicializarApp = function(dados) { 
-      DADOS_CACHE = dados; 
+    window.inicializarApp = async function() { 
       const selAno = document.getElementById('selAno'); 
-      const anos = Object.keys(DADOS_CACHE).sort().reverse(); 
-      
-      selAno.innerHTML = '<option value="" selected disabled>Selecione</option>'; 
-      anos.forEach(ano => { 
-        let opt = document.createElement('option'); 
-        opt.value = ano; 
-        opt.text = ano; 
-        selAno.appendChild(opt); 
-      }); 
+      try {
+        const anos = await DataService.buscarAnos(); 
+        selAno.innerHTML = '<option value="" selected disabled>Selecione</option>'; 
+        anos.forEach(ano => { 
+          let opt = document.createElement('option'); opt.value = ano; opt.text = ano; selAno.appendChild(opt); 
+        });
+      } catch (e) {
+        selAno.innerHTML = '<option value="" disabled>Erro ao carregar</option>';
+      }
     };
 
-    window.aoMudarAno = function() { 
+    window.aoMudarAno = async function() { 
       window.limparTela(); 
       const ano = document.getElementById('selAno').value; 
       const selTurma = document.getElementById('selTurma'); 
       const selAluno = document.getElementById('selAluno'); 
       
+      selTurma.innerHTML = '<option value="" selected disabled>Carregando...</option>';
       selAluno.innerHTML = '<option value=""></option>'; 
       selAluno.disabled = true; 
+      selTurma.disabled = true;
       
-      if (!ano || !DADOS_CACHE[ano]) return; 
+      if (!ano) return; 
       
-      const turmas = Object.keys(DADOS_CACHE[ano]).sort(); 
-      selTurma.innerHTML = '<option value="" selected disabled>Selecione</option>'; 
-      turmas.forEach(t => { 
-        let opt = document.createElement('option'); 
-        opt.value = t; 
-        opt.text = t; 
-        selTurma.appendChild(opt); 
-      }); 
-      
-      selTurma.disabled = false; 
+      try {
+        const turmas = await DataService.buscarTurmas(ano); 
+        selTurma.innerHTML = '<option value="" selected disabled>Selecione</option>'; 
+        turmas.forEach(t => { 
+          let opt = document.createElement('option'); opt.value = t; opt.text = t; selTurma.appendChild(opt); 
+        }); 
+        selTurma.disabled = false; 
+      } catch (e) {
+        selTurma.innerHTML = '<option value="" disabled>Erro ao carregar</option>';
+      }
     };
 
-    window.aoMudarTurma = function() { 
+    window.aoMudarTurma = async function() { 
       window.limparTela(); 
       const ano = document.getElementById('selAno').value; 
       const turma = document.getElementById('selTurma').value; 
       const selAluno = document.getElementById('selAluno'); 
       
-      if (!ano || !turma || !DADOS_CACHE[ano][turma]) return; 
+      selAluno.innerHTML = '<option value="" selected disabled>Carregando...</option>';
+      selAluno.disabled = true;
       
-      const alunos = DADOS_CACHE[ano][turma].sort(); 
-      selAluno.innerHTML = '<option value="" selected disabled>Selecione</option>'; 
-      alunos.forEach(a => { 
-        let opt = document.createElement('option'); 
-        opt.value = a; 
-        opt.text = a; 
-        selAluno.appendChild(opt); 
-      }); 
+      if (!ano || !turma) return; 
       
-      selAluno.disabled = false; 
+      try {
+        const alunos = await DataService.buscarAlunos(ano, turma); 
+        selAluno.innerHTML = '<option value="" selected disabled>Selecione</option>'; 
+        alunos.forEach(a => { 
+          let opt = document.createElement('option'); opt.value = a; opt.text = a; selAluno.appendChild(opt); 
+        }); 
+        selAluno.disabled = false;
+      } catch (e) {
+        selAluno.innerHTML = '<option value="" disabled>Erro ao carregar</option>';
+      }
     };
 
-    window.buscarRelatorio = function() { 
+    window.buscarRelatorio = async function() { 
       const ano = document.getElementById('selAno').value; 
-      const turma = document.getElementById('selTurma').value; 
       const aluno = document.getElementById('selAluno').value; 
       
       document.getElementById('areaNotas').innerHTML = ''; 
       const area = document.getElementById('resultadoArea'); 
-      
       area.innerHTML = `
         <div class="text-center p-5">
           <div class="spinner-border text-primary"></div>
@@ -989,29 +644,37 @@
         </div>
       `; 
       
-      chamarAPI('getRelatorioCabecalho', { ano, turma, aluno })
-        .then(dados => window.exibirCabecalho(dados))
-        .catch(e => {
-            if (e.message === "TOKEN_EXPIRED") {
-               area.innerHTML = `
-                 <div class="text-center p-5">
-                   <i class="fas fa-user-clock fa-2x text-warning mb-3"></i>
-                   <p class="small mb-0" style="color: var(--text-secondary);">Sessão suspensa. Conclua a autenticação na janela para continuar.</p>
-                 </div>
-               `;
-            } else {
-               area.innerHTML = `<div class="alert alert-danger">Erro: ${e.message}</div>`;
-            }
-        });
+      try {
+        const dadosMapeados = await DataService.buscarDadosRelatorio(ano, aluno);
+        window.exibirCabecalho(dadosMapeados);
+      } catch (e) {
+         area.innerHTML = `<div class="alert alert-danger">Erro: ${e.message}</div>`;
+      }
+    };
+
+    window.carregarTabelaNotas = async function(aluno, oc, trajetoria) { 
+      const divNotas = document.getElementById('areaNotas'); 
+      divNotas.innerHTML = `
+        <div class="text-center mt-4">
+          <div class="spinner-grow text-primary spinner-grow-sm"></div>
+          <span class="ms-3 small fw-bold text-secondary text-uppercase">Carregando notas</span>
+        </div>
+      `; 
+      
+      try {
+        const tabelaFinal = await DataService.buscarNotas(aluno, oc, trajetoria);
+        DADOS_NOTAS_ATUAL = tabelaFinal; 
+        window.renderizarTabelaFinal(tabelaFinal, trajetoria); 
+      } catch (e) {
+        divNotas.innerHTML = `<div class="alert alert-danger">Erro Notas: ${e.message}</div>`;
+      }
     };
 
     window.exibirCabecalho = function(dados) { 
       DADOS_RELATORIO_ATUAL = dados; 
-      
       const listaObs = dados.trajetoria.filter(t => t.existe && t.obs && String(t.obs).trim() !== "");
       const temObs = listaObs.length > 0;
       const temSistec = dados.sistec && String(dados.sistec).trim() !== "" && String(dados.sistec) !== "NA";
-
       const safe = window.escapeHTML; 
       
       let html = `
@@ -1033,19 +696,9 @@
               </div>
               <div class="table-responsive">
                 <table class="table table-sm table-hover text-center">
-                  <thead>
-                    <tr>
-                      <th>Ano</th>
-                      <th>Turma</th>
-                    </tr>
-                  </thead>
+                  <thead><tr><th>Ano</th><th>Turma</th></tr></thead>
                   <tbody>
-                    ${dados.trajetoria.map(t => `
-                      <tr>
-                        <td>${safe(t.ano)}</td>
-                        <td>${safe(t.turma)}</td>
-                      </tr>
-                    `).join('')}
+                    ${dados.trajetoria.map(t => `<tr><td>${safe(t.ano)}</td><td>${safe(t.turma)}</td></tr>`).join('')}
                   </tbody>
                 </table>
               </div>
@@ -1068,11 +721,7 @@
                            <span>Ano</span>
                         </label>
                       </th>
-                      <th>CH</th>
-                      <th>Dias</th>
-                      <th>Faltas</th>
-                      <th>%</th>
-                      <th>Res</th>
+                      <th>CH</th><th>Dias</th><th>Faltas</th><th>%</th><th>Res</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -1081,27 +730,14 @@
                         <label class="chk-container start" style="cursor: pointer;">
                           <input type="checkbox" class="form-check-input chk-sit-item" value="${idx}" checked onchange="window.atualizarEstadoSit()">
                           <span>${safe(t.ano)}</span>
-                        </label>
-                      `;
-
+                        </label>`;
                       if (t.existe) { 
-                        return `
-                          <tr>
-                            <td class="text-start">${chkHtml}</td>
-                            <td>${t.ch}</td>
-                            <td>${t.dias}</td>
-                            <td>${t.faltas}</td>
-                            <td>${t.porc}</td>
-                            <td><span class="badge rounded-pill ${t.res === 'AP' ? 'bg-success' : 'bg-secondary'}">${safe(t.res)}</span></td>
-                          </tr>
-                        `; 
+                        const porcFormatada = (t.porc !== null && t.porc !== undefined && t.porc !== "") 
+                                              ? String(t.porc).replace('.', ',') 
+                                              : "-";
+                        return `<tr><td class="text-start">${chkHtml}</td><td>${t.ch}</td><td>${t.dias}</td><td>${t.faltas}</td><td>${porcFormatada}</td><td><span class="badge rounded-pill ${t.res === 'AP' ? 'bg-success' : 'bg-secondary'}">${safe(t.res)}</span></td></tr>`; 
                       } else { 
-                        return `
-                          <tr>
-                            <td class="text-start text-secondary">${chkHtml}</td>
-                            <td class="text-secondary" colspan="5">-</td>
-                          </tr>
-                        `; 
+                        return `<tr><td class="text-start text-secondary">${chkHtml}</td><td class="text-secondary" colspan="5">-</td></tr>`; 
                       } 
                     }).join('')}
                   </tbody>
@@ -1114,17 +750,12 @@
           <div class="mt-4 p-3 rounded" style="background-color: var(--background); border: 1px solid var(--outline-variant);">
             <div class="d-flex justify-content-between align-items-center mb-2">
               <small class="text-secondary fw-bold text-uppercase">Código SISTEC</small>
-              <button onclick="window.copiarSistec(this)" class="btn-action btn-sm">
-                <i class="fas fa-copy"></i> Copiar
-              </button>
+              <button onclick="window.copiarSistec(this)" class="btn-action btn-sm"><i class="fas fa-copy"></i> Copiar</button>
             </div>
-            <div class="mb-0 ps-1 small mt-2" style="color: var(--text-secondary); font-family: monospace; font-size: 0.9rem;">
-                ${safe(dados.sistec)}
-            </div>
+            <div class="mb-0 ps-1 small mt-2" style="color: var(--text-secondary); font-family: monospace; font-size: 0.9rem;">${safe(dados.sistec)}</div>
           </div>` : ''}
 
           <div class="mt-3 p-3 rounded" style="background-color: var(--background); border: 1px solid var(--outline-variant);">
-            
             <div class="d-flex justify-content-between align-items-center mb-3 border-bottom pb-2" style="border-color: rgba(0,0,0,0.05) !important;">
                <div class="d-flex align-items-center gap-2">
                   ${temObs ? `
@@ -1132,113 +763,30 @@
                         <input type="checkbox" class="form-check-input" id="chk-obs-master" checked onchange="window.toggleAllObs(this)">
                         <span class="text-secondary fw-bold text-uppercase small" style="user-select: none;">Observações</span>
                     </label>
-                  ` : `
-                    <span class="text-secondary fw-bold text-uppercase small">Observações</span>
-                  `}
+                  ` : `<span class="text-secondary fw-bold text-uppercase small">Observações</span>`}
                </div>
-               
-               ${temObs ? `
-                 <button id="btnCopiarObs" onclick="window.copiarObservacoesSelecionadas(this)" class="btn-action btn-sm">
-                   <i class="fas fa-copy"></i> Copiar
-                 </button>
-               ` : ''}
+               ${temObs ? `<button id="btnCopiarObs" onclick="window.copiarObservacoesSelecionadas(this)" class="btn-action btn-sm"><i class="fas fa-copy"></i> Copiar</button>` : ''}
             </div>
-
             <div class="d-flex flex-column gap-2">
               ${listaObs.map((t) => `
                 <div class="d-flex align-items-start gap-2 p-1 hover-obs-item">
                    <label class="chk-container mt-1" style="cursor: pointer;">
                       <input type="checkbox" class="form-check-input chk-obs-item" checked value="${safe(t.obs)}" onchange="window.atualizarEstadoObs()">
                    </label>
-                   <span class="small" style="color: var(--text-secondary); line-height: 1.4;">
-                      <strong>${safe(t.ano)}:</strong> ${safe(t.obs)}
-                   </span>
+                   <span class="small" style="color: var(--text-secondary); line-height: 1.4;"><strong>${safe(t.ano)}:</strong>${safe(t.obs)}</span>
                 </div>
               `).join('')}
               ${!temObs ? '<span class="small style="color: var(--text-secondary);" fst-italic ms-1">Nenhuma observação registrada.</span>' : ''}
             </div>
           </div>
-
         </div>
       `; 
-      
       document.getElementById('resultadoArea').innerHTML = html; 
       window.carregarTabelaNotas(dados.aluno, dados.oc, dados.trajetoria); 
     };
 
-    window.toggleAllSit = function(masterChk) {
-      const checkboxes = document.querySelectorAll('.chk-sit-item');
-      checkboxes.forEach(chk => chk.checked = masterChk.checked);
-      window.atualizarEstadoSit();
-    };
-
-    window.atualizarEstadoSit = function() {
-      const checkboxes = document.querySelectorAll('.chk-sit-item');
-      const marcados = document.querySelectorAll('.chk-sit-item:checked');
-      const master = document.getElementById('chk-sit-master');
-      const btn = document.getElementById('btnCopiarSituacao');
-
-      if (checkboxes.length > 0 && master) {
-        master.checked = (marcados.length === checkboxes.length);
-        master.indeterminate = (marcados.length > 0 && marcados.length < checkboxes.length);
-      }
-
-      if (btn) {
-        if (marcados.length > 0) {
-           btn.style.visibility = 'visible';
-           btn.style.opacity = '1';
-           const isTudo = (marcados.length === checkboxes.length);
-           const novoTexto = isTudo ? '<i class="fas fa-copy"></i> Copiar' : '<i class="fas fa-copy"></i> Copiar Seleção';
-           if (btn.innerHTML !== novoTexto) btn.innerHTML = novoTexto;
-        } else {
-           btn.style.visibility = 'hidden';
-           btn.style.opacity = '0';
-        }
-      }
-    };
-
-    window.carregarTabelaNotas = function(aluno, oc, trajetoria) { 
-      const divNotas = document.getElementById('areaNotas'); 
-      divNotas.innerHTML = `
-        <div class="text-center mt-4">
-          <div class="spinner-grow text-primary spinner-grow-sm"></div>
-          <span class="ms-3 small fw-bold text-secondary text-uppercase">Carregando notas</span>
-        </div>
-      `; 
-      
-      chamarAPI('getTabelaNotas', { aluno, oc, trajetoria })
-        .then(tabela => { 
-          DADOS_NOTAS_ATUAL = tabela; 
-          window.renderizarTabelaFinal(tabela, trajetoria); 
-        })
-        .catch(e => {
-            if (e.message === "TOKEN_EXPIRED") {
-               divNotas.innerHTML = `
-                 <div class="text-center mt-4">
-                   <i class="fas fa-user-clock text-warning mb-2"></i>
-                   <p class="small style="color: var(--text-secondary);" mb-0">Faça login e repita a busca.</p>
-                 </div>
-               `;
-            } else {
-               divNotas.innerHTML = `<div class="alert alert-danger">Erro Notas: ${e.message}</div>`;
-            }
-        });
-    };
-
-    // =========================================================
-    // LÓGICA DE SELEÇÃO E CÓPIA (ATUALIZADO)
-    // =========================================================
-
-    window.formatarCelula = function(valor, mesclagem) { 
-      if (!valor) valor = "-"; 
-      const qtdTabs = Math.max(0, (mesclagem || 1) - 1);
-      const tabs = "\t".repeat(qtdTabs); 
-      return valor + tabs; 
-    };    
-    
     window.renderizarTabelaFinal = function(tabela, trajetoria) { 
       const safe = window.escapeHTML;
-
       let html = `
         <div class="m-card">
           <div class="d-flex justify-content-between align-items-center mb-3">
@@ -1267,11 +815,7 @@
                   `).join('')}
                 </tr>
                 <tr>
-                  ${trajetoria.map(() => `
-                    <th class="text-secondary small">PTS</th>
-                    <th class="text-secondary small">CH</th>
-                    <th class="text-secondary small">FT</th>
-                  `).join('')}
+                  ${trajetoria.map(() => `<th class="text-secondary small">PTS</th><th class="text-secondary small">CH</th><th class="text-secondary small">FT</th>`).join('')}
                 </tr>
               </thead>
               <tbody>
@@ -1295,36 +839,112 @@
           </div>
         </div>
       `; 
-      
       document.getElementById('areaNotas').innerHTML = html; 
     };
 
-    // =========================================================
-    // LÓGICA DE VISUALIZAÇÃO E CONTROLE (MATRIZ UNIFICADA)
-    // =========================================================
 
+    // =========================================================
+    // 6. UTILITÁRIOS (Helpers, Tema, Interações, Copiar)
+    // =========================================================
+    window.escapeHTML = function(str) {
+      if (str === null || str === undefined || str === "") return "";
+      return String(str).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#039;");
+    };
+
+    function hexToRgb(hex) {
+      const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+      return result ? { r: parseInt(result[1], 16), g: parseInt(result[2], 16), b: parseInt(result[3], 16) } : null;
+    }
+
+    function rgbToHex(r, g, b) {
+      return "#" + ((1 << 24) + (r << 16) + (g << 8) + b).toString(16).slice(1);
+    }
+
+    function animarMetaCor(corOrigem, corDestino, duration) {
+      const start = hexToRgb(corOrigem); const end = hexToRgb(corDestino);
+      const metaTag = document.getElementById('meta-theme-color');
+      if (!start || !end || !metaTag) return;
+      let startTime = null;
+      function animationStep(timestamp) {
+        if (!startTime) startTime = timestamp;
+        const progress = timestamp - startTime;
+        const percent = Math.min(progress / duration, 1);
+        const r = Math.round(start.r + (end.r - start.r) * percent);
+        const g = Math.round(start.g + (end.g - start.g) * percent);
+        const b = Math.round(start.b + (end.b - start.b) * percent);
+        metaTag.setAttribute('content', rgbToHex(r, g, b));
+        if (progress < duration) window.requestAnimationFrame(animationStep);
+      }
+      window.requestAnimationFrame(animationStep);
+    }
+
+    window.toggleTheme = function() {
+      const htmlTag = document.documentElement;
+      const icon = document.getElementById('icon-theme');
+      const COR_LIGHT = '#fdfcff'; const COR_DARK = '#111315';
+      const isDark = htmlTag.getAttribute('data-theme') === 'dark';
+      if (isDark) {
+        htmlTag.removeAttribute('data-theme');
+        if (icon) icon.classList.replace('fa-sun', 'fa-moon');
+        localStorage.setItem('theme', 'light'); animarMetaCor(COR_DARK, COR_LIGHT, 300);
+      } else {
+        htmlTag.setAttribute('data-theme', 'dark');
+        if (icon) icon.classList.replace('fa-moon', 'fa-sun');
+        localStorage.setItem('theme', 'dark'); animarMetaCor(COR_LIGHT, COR_DARK, 300);
+      }
+    };
+
+    window.carregarConfig = function() { 
+      try { 
+        const raw = localStorage.getItem('appEscolarConfig'); 
+        const cfg = raw ? JSON.parse(raw) : null; 
+        if (cfg) { 
+          if(document.getElementById('cfgNotas')) document.getElementById('cfgNotas').value = cfg.notas; 
+          if(document.getElementById('cfgSituacao')) document.getElementById('cfgSituacao').value = cfg.situacao; 
+        } else { 
+          window.resetarConfig(); 
+        } 
+      } catch (e) { window.resetarConfig(); } 
+    };
+
+    window.salvarConfig = function() { 
+      const config = { 
+        notas: parseInt(document.getElementById('cfgNotas').value) || 3, 
+        situacao: parseInt(document.getElementById('cfgSituacao').value) || 9 
+      }; 
+      localStorage.setItem('appEscolarConfig', JSON.stringify(config)); 
+    };
+
+    window.resetarConfig = function() { 
+      if(document.getElementById('cfgNotas')) document.getElementById('cfgNotas').value = 3; 
+      if(document.getElementById('cfgSituacao')) document.getElementById('cfgSituacao').value = 9; 
+      window.salvarConfig(); 
+    };
+
+    window.formatarCelula = function(valor, mesclagem) { 
+      if (valor === null || valor === undefined || valor === "") valor = "-"; 
+      const qtdTabs = Math.max(0, (mesclagem || 1) - 1);
+      const tabs = "\t".repeat(qtdTabs); 
+      return valor + tabs; 
+    };    
+    
     let frameVisualUpdate = null;
 
     window.atualizarVisualMatriz = function() {
       const colHeaders = document.querySelectorAll('.chk-col-header');
       const rowChecks = document.querySelectorAll('.chk-row-item');
-      
       const temCol = Array.from(colHeaders).some(c => c.checked);
       const temRow = Array.from(rowChecks).some(r => r.checked);
       const temDadosParaCopiar = (temCol && temRow);
-
       const btn = document.getElementById('btnCopiarNotas');
       if (btn) btn.style.visibility = temDadosParaCopiar ? 'visible' : 'hidden';
 
       if (frameVisualUpdate) cancelAnimationFrame(frameVisualUpdate);
-      
       frameVisualUpdate = requestAnimationFrame(() => {
         const mapaCols = Array.from(colHeaders).map(chk => chk.checked);
         const mapaRows = Array.from(rowChecks).map(chk => chk.checked);
-
         const qtdColsChecked = mapaCols.filter(Boolean).length;
         const qtdRowsChecked = mapaRows.filter(Boolean).length;
-
         const isTodasCols = (colHeaders.length > 0 && colHeaders.length === qtdColsChecked);
         const isTodasRows = (rowChecks.length > 0 && rowChecks.length === qtdRowsChecked);
         const isTudoFull = (isTodasCols && isTodasRows);
@@ -1344,22 +964,15 @@
           const tr = chk.closest('tr');
           const isRowAtiva = mapaRows[idxRow];
           const cells = tr.children; 
-          
           for (let i = 1; i < cells.length; i++) {
              const td = cells[i];
              const anoIdx = parseInt(td.getAttribute('data-year-idx'));
-             
              if (isNaN(anoIdx)) continue;
-
              const isColAtiva = mapaCols[anoIdx];
              const devePintar = (!isTudoFull && isRowAtiva && isColAtiva);
              const jaTemClasse = td.classList.contains('highlight-cell');
-             
-             if (devePintar && !jaTemClasse) {
-               td.classList.add('highlight-cell');
-             } else if (!devePintar && jaTemClasse) {
-               td.classList.remove('highlight-cell');
-             }
+             if (devePintar && !jaTemClasse) td.classList.add('highlight-cell');
+             else if (!devePintar && jaTemClasse) td.classList.remove('highlight-cell');
           }
         });
         frameVisualUpdate = null;
@@ -1372,125 +985,33 @@
       window.atualizarVisualMatriz(); 
     };
 
-    window.verificarMasterCheckbox = function() {
-      window.atualizarVisualMatriz(); 
-    };
+    window.verificarMasterCheckbox = function() { window.atualizarVisualMatriz(); };
 
-    window.copiarNotas = function(btnElement) { 
-      if (!DADOS_NOTAS_ATUAL) {
-        alert("Erro: Dados não carregados na memória.");
-        return;
-      }
-
-      try {
-        const inputCfg = document.getElementById('cfgNotas');
-        const valorCfg = inputCfg ? parseInt(inputCfg.value) : 3;
-        const notasTabs = isNaN(valorCfg) ? 3 : valorCfg;
-        
-        let texto = ""; 
-        
-        const colunasHeaders = document.querySelectorAll('.chk-col-header');
-        if (colunasHeaders.length === 0) throw new Error("Cabeçalhos de coluna não encontrados.");
-        
-        const colunasMarcadas = Array.from(colunasHeaders).map(chk => chk.checked);
-        const linhasDOM = document.querySelectorAll('#tabelaNotasMain tbody tr');
-        
-        linhasDOM.forEach((tr) => {
-          const chkRow = tr.querySelector('.chk-row-item');
-          
-          if (chkRow && chkRow.checked) {
-            const idxDados = parseInt(chkRow.getAttribute('data-row-index'));
-            const dadosLinha = DADOS_NOTAS_ATUAL[idxDados]; 
-            
-            if (!dadosLinha) return; 
-
-            let linhaTexto = ""; 
-            
-            if (dadosLinha.anos) {
-              dadosLinha.anos.forEach((ano, idxAno) => { 
-                if (colunasMarcadas[idxAno] !== undefined && colunasMarcadas[idxAno] === true) {
-                   linhaTexto += window.formatarCelula(ano.nota, notasTabs) + "\t" + 
-                                 window.formatarCelula(ano.ch, notasTabs) + "\t" + 
-                                 window.formatarCelula(ano.falta, notasTabs) + "\t"; 
-                }
-              });
-            }
-            
-            if (linhaTexto) {
-              texto += linhaTexto + "\n";
-            }
-          }
-        }); 
-        
-        if (texto === "") {
-          alert("Nenhum item selecionado para cópia.");
-          return;
-        }
-
-        window.executarCopiaReal(texto, btnElement); 
-
-      } catch (error) {
-        console.error(error);
-        alert("Erro ao processar cópia: " + error.message);
-      }
-    };
-
-    window.copiarSituacao = function(btnElement) { 
-      if (!DADOS_RELATORIO_ATUAL) return; 
-
+    window.toggleAllSit = function(masterChk) {
       const checkboxes = document.querySelectorAll('.chk-sit-item');
-      if (checkboxes.length === 0) return;
+      checkboxes.forEach(chk => chk.checked = masterChk.checked);
+      window.atualizarEstadoSit();
+    };
 
-      const cfg = { situacao: parseInt(document.getElementById('cfgSituacao').value) || 9 }; 
-      const trajetoria = DADOS_RELATORIO_ATUAL.trajetoria; 
-      
-      let linhaCH = "", linhaDias = "", linhaFaltas = "", linhaPorc = "", linhaRes = ""; 
-      let temSelecionado = false;
-
-      checkboxes.forEach(chk => {
-        if (chk.checked) {
-            temSelecionado = true;
-            const idx = parseInt(chk.value); 
-            const t = trajetoria[idx];
-            
-            if (t) {
-                linhaCH += window.formatarCelula(t.existe ? t.ch : "-", cfg.situacao) + "\t"; 
-                linhaDias += window.formatarCelula(t.existe ? t.dias : "-", cfg.situacao) + "\t"; 
-                linhaFaltas += window.formatarCelula(t.existe ? t.faltas : "-", cfg.situacao) + "\t"; 
-                linhaPorc += window.formatarCelula(t.existe ? t.porc : "-", cfg.situacao) + "\t"; 
-                linhaRes += window.formatarCelula(t.existe ? t.res : "-", cfg.situacao) + "\t"; 
-            }
-        }
-      });
-      
-      if (!temSelecionado) {
-          alert("Nenhum ano selecionado para cópia.");
-          return;
+    window.atualizarEstadoSit = function() {
+      const checkboxes = document.querySelectorAll('.chk-sit-item');
+      const marcados = document.querySelectorAll('.chk-sit-item:checked');
+      const master = document.getElementById('chk-sit-master');
+      const btn = document.getElementById('btnCopiarSituacao');
+      if (checkboxes.length > 0 && master) {
+        master.checked = (marcados.length === checkboxes.length);
+        master.indeterminate = (marcados.length > 0 && marcados.length < checkboxes.length);
       }
-      
-      let texto = linhaCH + "\n" + linhaDias + "\n" + linhaFaltas + "\n" + linhaPorc + "\n" + linhaRes; 
-      
-      window.executarCopiaReal(texto, btnElement); 
-    };
-
-    window.copiarObservacoes = function(btnElement) { 
-      if (!DADOS_RELATORIO_ATUAL) return; 
-      
-      const listaObs = DADOS_RELATORIO_ATUAL.trajetoria
-        .filter(t => t.existe && t.obs && String(t.obs).trim() !== "")
-        .map(t => t.obs); 
-      
-      if (listaObs.length === 0) { 
-        alert("Não há observações."); 
-        return; 
-      } 
-      
-      window.executarCopiaReal(listaObs.join("\n"), btnElement); 
-    };
-
-    window.copiarSistec = function(btnElement) {
-      if (!DADOS_RELATORIO_ATUAL || !DADOS_RELATORIO_ATUAL.sistec) return;
-      window.executarCopiaReal(DADOS_RELATORIO_ATUAL.sistec, btnElement);
+      if (btn) {
+        if (marcados.length > 0) {
+           btn.style.visibility = 'visible'; btn.style.opacity = '1';
+           const isTudo = (marcados.length === checkboxes.length);
+           const novoTexto = isTudo ? '<i class="fas fa-copy"></i> Copiar' : '<i class="fas fa-copy"></i> Copiar Seleção';
+           if (btn.innerHTML !== novoTexto) btn.innerHTML = novoTexto;
+        } else {
+           btn.style.visibility = 'hidden'; btn.style.opacity = '0';
+        }
+      }
     };
 
     window.toggleAllObs = function(masterChk) {
@@ -1504,47 +1025,119 @@
       const marcados = document.querySelectorAll('.chk-obs-item:checked');
       const master = document.getElementById('chk-obs-master');
       const btn = document.getElementById('btnCopiarObs');
-
       if (checkboxes.length > 0 && master) {
         master.checked = (marcados.length === checkboxes.length);
         master.indeterminate = (marcados.length > 0 && marcados.length < checkboxes.length);
       }
-
       if (btn) {
         if (marcados.length > 0) {
-           btn.style.visibility = 'visible';
-           btn.style.opacity = '1';
-           
+           btn.style.visibility = 'visible'; btn.style.opacity = '1';
            const isTudo = (marcados.length === checkboxes.length);
            const novoTexto = isTudo ? '<i class="fas fa-copy"></i> Copiar' : '<i class="fas fa-copy"></i> Copiar Seleção';
-           
            if (btn.innerHTML !== novoTexto) btn.innerHTML = novoTexto;
         } else {
-           btn.style.visibility = 'hidden';
-           btn.style.opacity = '0';
+           btn.style.visibility = 'hidden'; btn.style.opacity = '0';
         }
       }
+    };
+
+    window.copiarNotas = function(btnElement) { 
+      if (!DADOS_NOTAS_ATUAL) { alert("Erro: Dados não carregados na memória."); return; }
+      try {
+        const inputCfg = document.getElementById('cfgNotas');
+        const valorCfg = inputCfg ? parseInt(inputCfg.value) : 3;
+        const notasTabs = isNaN(valorCfg) ? 3 : valorCfg;
+        let texto = ""; 
+        const colunasHeaders = document.querySelectorAll('.chk-col-header');
+        if (colunasHeaders.length === 0) throw new Error("Cabeçalhos de coluna não encontrados.");
+        
+        const colunasMarcadas = Array.from(colunasHeaders).map(chk => chk.checked);
+        const linhasDOM = document.querySelectorAll('#tabelaNotasMain tbody tr');
+        
+        linhasDOM.forEach((tr) => {
+          const chkRow = tr.querySelector('.chk-row-item');
+          if (chkRow && chkRow.checked) {
+            const idxDados = parseInt(chkRow.getAttribute('data-row-index'));
+            const dadosLinha = DADOS_NOTAS_ATUAL[idxDados]; 
+            if (!dadosLinha) return; 
+            let linhaTexto = ""; 
+            if (dadosLinha.anos) {
+              dadosLinha.anos.forEach((ano, idxAno) => { 
+                if (colunasMarcadas[idxAno] !== undefined && colunasMarcadas[idxAno] === true) {
+                   linhaTexto += window.formatarCelula(ano.nota, notasTabs) + "\t" + 
+                                 window.formatarCelula(ano.ch, notasTabs) + "\t" + 
+                                 window.formatarCelula(ano.falta, notasTabs) + "\t"; 
+                }
+              });
+            }
+            if (linhaTexto) texto += linhaTexto + "\n";
+          }
+        }); 
+        if (texto === "") { alert("Nenhum item selecionado para cópia."); return; }
+        window.executarCopiaReal(texto, btnElement); 
+      } catch (error) { alert("Erro ao processar cópia: " + error.message); }
+    };
+
+    window.copiarSituacao = function(btnElement) { 
+      if (!DADOS_RELATORIO_ATUAL) return; 
+      const checkboxes = document.querySelectorAll('.chk-sit-item');
+      if (checkboxes.length === 0) return;
+      const cfg = { situacao: parseInt(document.getElementById('cfgSituacao').value) || 9 }; 
+      const trajetoria = DADOS_RELATORIO_ATUAL.trajetoria; 
+      let linhaCH = "", linhaDias = "", linhaFaltas = "", linhaPorc = "", linhaRes = ""; 
+      let temSelecionado = false;
+
+      checkboxes.forEach(chk => {
+        if (chk.checked) {
+            temSelecionado = true;
+            const idx = parseInt(chk.value); 
+            const t = trajetoria[idx];
+            if (t) {
+                const porcFormatada = (t.existe && t.porc != null && t.porc !== "") 
+                                      ? String(t.porc).replace('.', ',') 
+                                      : "-";
+
+                linhaCH += window.formatarCelula(t.existe ? t.ch : "-", cfg.situacao) + "\t"; 
+                linhaDias += window.formatarCelula(t.existe ? t.dias : "-", cfg.situacao) + "\t"; 
+                linhaFaltas += window.formatarCelula(t.existe ? t.faltas : "-", cfg.situacao) + "\t"; 
+                linhaPorc += window.formatarCelula(porcFormatada, cfg.situacao) + "\t"; 
+                linhaRes += window.formatarCelula(t.existe ? t.res : "-", cfg.situacao) + "\t"; 
+            }
+        }
+      });
+      if (!temSelecionado) { alert("Nenhum ano selecionado para cópia."); return; }
+      let texto = linhaCH + "\n" + linhaDias + "\n" + linhaFaltas + "\n" + linhaPorc + "\n" + linhaRes; 
+      window.executarCopiaReal(texto, btnElement); 
+    };
+
+    window.copiarObservacoes = function(btnElement) { 
+      if (!DADOS_RELATORIO_ATUAL) return; 
+      const listaObs = DADOS_RELATORIO_ATUAL.trajetoria
+        .filter(t => t.existe && t.obs && String(t.obs).trim() !== "")
+        .map(t => t.obs); 
+      if (listaObs.length === 0) { alert("Não há observações."); return; } 
+      window.executarCopiaReal(listaObs.join("\n"), btnElement); 
+    };
+
+    window.copiarSistec = function(btnElement) {
+      if (!DADOS_RELATORIO_ATUAL || !DADOS_RELATORIO_ATUAL.sistec) return;
+      window.executarCopiaReal(DADOS_RELATORIO_ATUAL.sistec, btnElement);
     };
 
     window.copiarObservacoesSelecionadas = function(btnElement) {
       const marcados = document.querySelectorAll('.chk-obs-item:checked');
       if (marcados.length === 0) return; 
-
       const textoFinal = Array.from(marcados).map(chk => chk.value).join("\n");
       window.executarCopiaReal(textoFinal, btnElement);
     };
 
     window.executarCopiaReal = function(texto, btn) { 
       const textarea = document.createElement('textarea'); 
-      textarea.value = texto; 
-      textarea.style.position = 'fixed'; 
-      textarea.style.left = '0'; 
-      textarea.style.top = '0'; 
-      textarea.style.opacity = '0.1'; 
+      textarea.value = texto; textarea.style.position = 'fixed'; 
+      textarea.style.left = '0'; textarea.style.top = '0'; textarea.style.opacity = '0.1'; 
       
       document.body.appendChild(textarea); 
-      textarea.focus(); 
-      textarea.select(); 
+      textarea.focus(); textarea.select(); 
       
       try { 
         const ok = document.execCommand('copy'); 
@@ -1552,20 +1145,126 @@
           const originalHTML = btn.innerHTML; 
           btn.innerHTML = '<i class="fas fa-check"></i> Copiado!'; 
           btn.classList.add('success-state'); 
-          setTimeout(() => { 
-            btn.innerHTML = originalHTML; 
-            btn.classList.remove('success-state'); 
-          }, 2000); 
+          setTimeout(() => { btn.innerHTML = originalHTML; btn.classList.remove('success-state'); }, 2000); 
         } 
-      } catch (err) { 
-        alert("Erro ao copiar."); 
-      } 
-      
+      } catch (err) { alert("Erro ao copiar."); } 
       document.body.removeChild(textarea); 
     };
-  </script>
 
-  <script src="https://accounts.google.com/gsi/client" async defer onload="window.onGoogleLibraryLoad()"></script>
+    window.cadastrarPasskey = async function() { 
+      const btn = document.getElementById('btn-add-passkey');
+      const originalText = btn.innerHTML;
   
+      btn.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>';
+      btn.disabled = true;
+
+      try {
+        const { data, error } = await supabaseClient.auth.registerPasskey();
+    
+        if (error) {
+          console.error(error);
+          alert("Não foi possível registrar o dispositivo: " + error.message);
+        } else {
+          btn.classList.replace('btn-outline-primary', 'btn-success');
+          btn.style.color = "#fff";
+          btn.innerHTML = '<i class="fas fa-check"></i> Cadastrado';
+          window.carregarPasskeys();
+      
+          setTimeout(() => {
+             btn.classList.replace('btn-success', 'btn-outline-primary');
+             btn.style.color = "";
+             btn.innerHTML = originalText;
+          }, 3000);
+        }
+      } catch (err) {
+        alert("Erro inesperado ao invocar WebAuthn: " + err.message);
+      } finally {
+        btn.disabled = false;
+        if(btn.innerHTML.includes('spinner')) {
+           btn.innerHTML = originalText;
+        }
+      }
+    };
+
+    window.carregarPasskeys = async function() {
+      const listaContainer = document.getElementById('lista-passkeys');
+      listaContainer.style.setProperty('display', 'flex', 'important');
+      listaContainer.innerHTML = '<div class="text-center small text-secondary py-2"><span class="spinner-border spinner-border-sm"></span> Carregando</div>';
+
+      try {
+        const { data: passkeys, error } = await supabaseClient.auth.passkey.list();
+    
+        if (error) throw error;
+
+        if (!passkeys || passkeys.length === 0) {
+          listaContainer.innerHTML = '<div class="text-center small text-secondary py-2 fst-italic">Nenhum dispositivo registado.</div>';
+          return;
+        }
+
+        let htmlLista = '';
+        passkeys.forEach(pk => {
+          const dataCriacao = new Date(pk.created_at).toLocaleDateString('pt-PT');
+      
+          htmlLista += `
+            <div class="d-flex justify-content-between align-items-center p-2 rounded hover-obs-item" style="background-color: var(--background); border: 1px solid var(--outline-variant);">
+               <div class="d-flex flex-column overflow-hidden pe-2">
+                  <span class="fw-bold small text-truncate" style="color: var(--text-main);">${window.escapeHTML(pk.friendly_name || 'Dispositivo Desconhecido')}</span>
+                  <span class="small" style="font-size: 0.75rem; color: var(--text-secondary);">Adicionada em ${dataCriacao}</span>
+               </div>
+               <div class="d-flex gap-1 flex-shrink-0">
+                  <button onclick="window.renomearPasskey('${pk.id}', '${window.escapeHTML(pk.friendly_name || '')}')" class="btn btn-icon btn-sm" style="width: 30px; height: 30px;" title="Mudar nome">
+                     <i class="fas fa-pen" style="font-size: 0.8rem;"></i>
+                  </button>
+                  <button onclick="window.removerPasskey('${pk.id}')" class="btn btn-icon btn-sm text-danger" style="width: 30px; height: 30px;" title="Remover">
+                     <i class="fas fa-trash" style="font-size: 0.8rem;"></i>
+                  </button>
+              </div>
+            </div>
+          `;
+        });
+    
+        listaContainer.innerHTML = htmlLista;
+
+      } catch (err) {
+        listaContainer.innerHTML = `<div class="alert alert-danger p-2 small m-0">Erro: ${err.message}</div>`;
+      }
+    };
+
+    window.removerPasskey = async function(id) {
+      if (!confirm("Tem a certeza que deseja remover este dispositivo? Não poderá usá-lo para iniciar sessão.")) return;
+  
+      try {
+        const { error } = await supabaseClient.auth.passkey.delete({ passkeyId: id });
+        if (error) throw error;
+    
+        window.carregarPasskeys();
+      } catch (err) {
+        alert("Erro ao remover: " + err.message);
+      }
+    };
+
+    window.renomearPasskey = async function(id, nomeAtual) {
+      const novoNome = prompt("Introduza um novo nome para este dispositivo (ex: iPhone do João, PC Trabalho):", nomeAtual);
+  
+      if (novoNome === null || novoNome.trim() === "" || novoNome === nomeAtual) return;
+
+      try {
+        const { error } = await supabaseClient.auth.passkey.update({
+          passkeyId: id,
+          friendlyName: novoNome.trim()
+        });
+    
+        if (error) throw error;
+    
+        window.carregarPasskeys();
+      } catch (err) {
+        alert("Erro ao mudar o nome: " + err.message);
+      }
+    };
+
+    document.getElementById('modalConfig').addEventListener('show.bs.modal', function () {
+      window.carregarPasskeys();
+    });
+  </script>
 </body>
 </html>
