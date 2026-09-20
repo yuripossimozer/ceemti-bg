@@ -289,19 +289,26 @@
              </div>
              <button onclick="window.fazerLogout()" class="btn btn-sm btn-outline-danger rounded-pill px-3" data-bs-dismiss="modal">Sair</button>
           </div>
-          <div class="mt-3 p-3 rounded d-flex align-items-center justify-content-between" style="border: 1px solid var(--outline-variant);">
-             <div class="d-flex align-items-center gap-3">
-                <div class="d-flex align-items-center justify-content-center rounded-circle" style="width: 40px; height: 40px; background-color: var(--primary-container); color: var(--on-primary-container);">
-                  <i class="fas fa-fingerprint"></i>
+          <h6 class="text-secondary small fw-bold text-uppercase mt-4 mb-3">Autenticação Biométrica</h6>
+          <div class="p-3 rounded d-flex flex-column gap-3" style="border: 1px solid var(--outline-variant);">
+             <div class="d-flex align-items-center justify-content-between">
+                <div class="d-flex align-items-center gap-3">
+                   <div class="d-flex align-items-center justify-content-center rounded-circle" style="width: 40px; height: 40px; background-color: var(--primary-container); color: var(--on-primary-container);">
+                     <i class="fas fa-fingerprint"></i>
+                   </div>
+                   <div style="line-height: 1.2;">
+                     <span class="d-block fw-bold" style="font-size: 0.9rem;">Passkeys</span>
+                     <span class="d-block small text-secondary">Acesso rápido sem palavra-passe</span>
+                   </div>
                 </div>
-                <div style="line-height: 1.2;">
-                  <span class="d-block fw-bold" style="font-size: 0.9rem;">Acesso Rápido (Passkey)</span>
-                  <span class="d-block small text-secondary">Biometria ou PIN do aparelho</span>
-                </div>
+                <button id="btn-add-passkey" onclick="window.cadastrarPasskey()" class="btn btn-sm btn-outline-primary rounded-pill px-3">
+                   Adicionar
+                </button>
              </div>
-             <button id="btn-add-passkey" onclick="window.cadastrarPasskey()" class="btn btn-sm btn-outline-primary rounded-pill px-3">
-                Cadastrar
-             </button>
+   
+             <div id="lista-passkeys" class="d-flex flex-column gap-2 mt-2 pt-3" style="border-top: 1px solid var(--outline-variant); display: none !important;">
+                <div class="text-center small text-secondary py-2 spinner-border spinner-border-sm mx-auto" role="status"></div>
+             </div>
           </div>
         </div>
       </div>
@@ -1164,6 +1171,7 @@
           btn.classList.replace('btn-outline-primary', 'btn-success');
           btn.style.color = "#fff";
           btn.innerHTML = '<i class="fas fa-check"></i> Cadastrado';
+          window.carregarPasskeys();
       
           setTimeout(() => {
              btn.classList.replace('btn-success', 'btn-outline-primary');
@@ -1180,8 +1188,86 @@
         }
       }
     };
-    
-  </script>
 
+    window.carregarPasskeys = async function() {
+      const listaContainer = document.getElementById('lista-passkeys');
+      listaContainer.style.setProperty('display', 'flex', 'important');
+      listaContainer.innerHTML = '<div class="text-center small text-secondary py-2"><span class="spinner-border spinner-border-sm"></span> A carregar...</div>';
+
+      try {
+        const { data: passkeys, error } = await supabaseClient.auth.passkey.list();
+    
+        if (error) throw error;
+
+        if (!passkeys || passkeys.length === 0) {
+          listaContainer.innerHTML = '<div class="text-center small text-secondary py-2 fst-italic">Nenhum dispositivo registado.</div>';
+          return;
+        }
+
+        let htmlLista = '';
+        passkeys.forEach(pk => {
+          const dataCriacao = new Date(pk.created_at).toLocaleDateString('pt-PT');
+      
+          htmlLista += `
+            <div class="d-flex justify-content-between align-items-center p-2 rounded hover-obs-item" style="background-color: var(--background); border: 1px solid var(--outline-variant);">
+               <div class="d-flex flex-column overflow-hidden pe-2">
+                  <span class="fw-bold small text-truncate" style="color: var(--text-main);">${window.escapeHTML(pk.friendly_name || 'Dispositivo Desconhecido')}</span>
+                  <span class="small" style="font-size: 0.75rem; color: var(--text-secondary);">Adicionado a ${dataCriacao}</span>
+               </div>
+               <div class="d-flex gap-1 flex-shrink-0">
+                  <button onclick="window.renomearPasskey('${pk.id}', '${window.escapeHTML(pk.friendly_name || '')}')" class="btn btn-icon btn-sm" style="width: 30px; height: 30px;" title="Mudar nome">
+                     <i class="fas fa-pen" style="font-size: 0.8rem;"></i>
+                  </button>
+                  <button onclick="window.removerPasskey('${pk.id}')" class="btn btn-icon btn-sm text-danger" style="width: 30px; height: 30px;" title="Remover">
+                     <i class="fas fa-trash" style="font-size: 0.8rem;"></i>
+                  </button>
+              </div>
+            </div>
+          `;
+        });
+    
+        listaContainer.innerHTML = htmlLista;
+
+      } catch (err) {
+        listaContainer.innerHTML = `<div class="alert alert-danger p-2 small m-0">Erro: ${err.message}</div>`;
+      }
+    };
+
+    window.removerPasskey = async function(id) {
+      if (!confirm("Tem a certeza que deseja remover este dispositivo? Não poderá usá-lo para iniciar sessão.")) return;
+  
+      try {
+        const { error } = await supabaseClient.auth.passkey.delete({ passkeyId: id });
+        if (error) throw error;
+    
+        window.carregarPasskeys();
+      } catch (err) {
+        alert("Erro ao remover: " + err.message);
+      }
+    };
+
+    window.renomearPasskey = async function(id, nomeAtual) {
+      const novoNome = prompt("Introduza um novo nome para este dispositivo (ex: iPhone do João, PC Trabalho):", nomeAtual);
+  
+      if (novoNome === null || novoNome.trim() === "" || novoNome === nomeAtual) return;
+
+      try {
+        const { error } = await supabaseClient.auth.passkey.update({
+          passkeyId: id,
+          friendlyName: novoNome.trim()
+        });
+    
+        if (error) throw error;
+    
+        window.carregarPasskeys();
+      } catch (err) {
+        alert("Erro ao mudar o nome: " + err.message);
+      }
+    };
+
+    document.getElementById('modalConfig').addEventListener('show.bs.modal', function () {
+      window.carregarPasskeys();
+    });
+  </script>
 </body>
 </html>
