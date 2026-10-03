@@ -14,7 +14,7 @@ import time
 # CONFIGURAÇÃO DE DIAGNÓSTICO (LOGS)
 # ==========================================
 SESSION_ID = uuid.uuid4().hex[:8].upper()
-VERSION = '1.1.0'
+VERSION = '1.1.1'
 DT_VERSION = '03/10/2026'
 
 LOG_BASE_DIR = os.path.join(tempfile.gettempdir(), 'pdf_editor_edocs_logs')
@@ -280,9 +280,9 @@ def _strip_edocs_token_from_text(text: str) -> str:
     """Remove apenas o token E-DOCS / E DOCS / EDOCS da string (uma linha de carimbo)."""
     if not text:
         return ""
-    t = re.sub(r"\bE\s*[- ]?\s*DOCS\b", " ", text, flags=re.IGNORECASE)
-    t = re.sub(r"\bEDOCS\b", " ", t, flags=re.IGNORECASE)
-    return re.sub(r"\s+", " ", t).strip()
+    t = re.sub(r"\bE\s*[- ]?\s*DOCS\b", "", text, flags=re.IGNORECASE)
+    t = re.sub(r"\bEDOCS\b", "", t, flags=re.IGNORECASE)
+    return t.strip()
 
 def _looks_like_url_or_domain_token(text: str) -> bool:
     """True se o fragmento de texto parece URL / domínio."""
