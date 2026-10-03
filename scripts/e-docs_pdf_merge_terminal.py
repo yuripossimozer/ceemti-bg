@@ -590,8 +590,20 @@ def shift_edocs_stamp_left_in_page(page, dx_pts: float = EDOCS_SHIFT_LEFT_PTS) -
         fontsize = 7.5
         for _, new_rect, base_text, is_vertical in adjusted:
             if is_vertical:
+                # 1. Mede o comprimento real (em pontos) da string que será desenhada
+                try:
+                    text_length = fitz.get_text_length(base_text, fontname="helv", fontsize=fontsize)
+                except AttributeError:
+                    # Fallback de segurança para versões mais antigas do PyMuPDF
+                    text_length = fitz.getTextlength(base_text, fontname="helv", fontsize=fontsize)
+                
+                # 2. Calcula o ponto de partida ideal ancorado na base do texto.
+                # Como o eixo Y cresce de cima (0) para baixo (height), somamos a metade da página 
+                # com a metade do texto para achar a coordenada de baixo exata.
+                start_y = (page_rect.height + text_length) / 2
+                
                 shape.insert_text(
-                    fitz.Point(new_rect.x0, new_rect.y1),
+                    fitz.Point(new_rect.x0, start_y),
                     base_text,
                     fontsize=fontsize,
                     fontname="helv",
