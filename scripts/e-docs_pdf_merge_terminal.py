@@ -14,8 +14,8 @@ import time
 # CONFIGURAÇÃO DE DIAGNÓSTICO (LOGS)
 # ==========================================
 SESSION_ID = uuid.uuid4().hex[:8].upper()
-VERSION = '1.0.17'
-DT_VERSION = '16/09/2026'
+VERSION = '1.1.0'
+DT_VERSION = '03/10/2026'
 
 LOG_BASE_DIR = os.path.join(tempfile.gettempdir(), 'pdf_editor_edocs_logs')
 os.makedirs(LOG_BASE_DIR, exist_ok=True)
