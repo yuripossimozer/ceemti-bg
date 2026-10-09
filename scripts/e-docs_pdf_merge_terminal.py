@@ -14,8 +14,8 @@ import time
 # CONFIGURAÇÃO DE DIAGNÓSTICO (LOGS)
 # ==========================================
 SESSION_ID = uuid.uuid4().hex[:8].upper()
-VERSION = '1.0.17'
-DT_VERSION = '16/09/2026'
+VERSION = '1.1.1'
+DT_VERSION = '03/10/2026'
 
 LOG_BASE_DIR = os.path.join(tempfile.gettempdir(), 'pdf_editor_edocs_logs')
 os.makedirs(LOG_BASE_DIR, exist_ok=True)
@@ -280,9 +280,9 @@ def _strip_edocs_token_from_text(text: str) -> str:
     """Remove apenas o token E-DOCS / E DOCS / EDOCS da string (uma linha de carimbo)."""
     if not text:
         return ""
-    t = re.sub(r"\bE\s*[- ]?\s*DOCS\b", " ", text, flags=re.IGNORECASE)
-    t = re.sub(r"\bEDOCS\b", " ", t, flags=re.IGNORECASE)
-    return re.sub(r"\s+", " ", t).strip()
+    t = re.sub(r"\bE\s*[- ]?\s*DOCS\b", "", text, flags=re.IGNORECASE)
+    t = re.sub(r"\bEDOCS\b", "", t, flags=re.IGNORECASE)
+    return t.strip()
 
 def _looks_like_url_or_domain_token(text: str) -> bool:
     """True se o fragmento de texto parece URL / domínio."""
@@ -590,8 +590,20 @@ def shift_edocs_stamp_left_in_page(page, dx_pts: float = EDOCS_SHIFT_LEFT_PTS) -
         fontsize = 7.5
         for _, new_rect, base_text, is_vertical in adjusted:
             if is_vertical:
+                # 1. Mede o comprimento real (em pontos) da string que será desenhada
+                try:
+                    text_length = fitz.get_text_length(base_text, fontname="helv", fontsize=fontsize)
+                except AttributeError:
+                    # Fallback de segurança para versões mais antigas do PyMuPDF
+                    text_length = fitz.getTextlength(base_text, fontname="helv", fontsize=fontsize)
+                
+                # 2. Calcula o ponto de partida ideal ancorado na base do texto.
+                # Como o eixo Y cresce de cima (0) para baixo (height), somamos a metade da página 
+                # com a metade do texto para achar a coordenada de baixo exata.
+                start_y = (page_rect.height + text_length) / 2
+                
                 shape.insert_text(
-                    fitz.Point(new_rect.x0, new_rect.y1),
+                    fitz.Point(new_rect.x0, start_y),
                     base_text,
                     fontsize=fontsize,
                     fontname="helv",
