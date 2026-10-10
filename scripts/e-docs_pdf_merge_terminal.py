@@ -14,7 +14,7 @@ import time
 # CONFIGURAÇÃO DE DIAGNÓSTICO (LOGS)
 # ==========================================
 SESSION_ID = uuid.uuid4().hex[:8].upper()
-VERSION = '1.2.1'
+VERSION = '1.2.2'
 DT_VERSION = '09/10/2026'
 
 LOG_BASE_DIR = os.path.join(tempfile.gettempdir(), 'pdf_editor_edocs_logs')
@@ -1575,8 +1575,11 @@ class TermuxPDFEditor:
                                     single.insert_pdf(src, from_page=pno, to_page=pno)
                                     single.del_xml_metadata()
                                 
-                                    # 1. Aplica a ocultação/movimentação E-DOCS normal do seu script
-                                    if shift_edocs_stamp_left_in_page(single[0], dx_pts=EDOCS_SHIFT_LEFT_PTS):
+                                                                        # Define o deslocamento interno do carimbo baseado na escolha do usuário
+                                    deslocamento_interno = EDOCS_SHIFT_LEFT_PTS if ajuste_modo == '1' else 0
+                                    
+                                    # 1. Aplica a ocultação E-DOCS (sem mover se for modo 2)
+                                    if shift_edocs_stamp_left_in_page(single[0], dx_pts=deslocamento_interno):
                                         edocs_count += 1
                                     
                                     # ==========================================
