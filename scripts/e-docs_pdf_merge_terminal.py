@@ -14,8 +14,8 @@ import time
 # CONFIGURAÇÃO DE DIAGNÓSTICO (LOGS)
 # ==========================================
 SESSION_ID = uuid.uuid4().hex[:8].upper()
-VERSION = '1.1.1'
-DT_VERSION = '03/10/2026'
+VERSION = '1.2.1'
+DT_VERSION = '09/10/2026'
 
 LOG_BASE_DIR = os.path.join(tempfile.gettempdir(), 'pdf_editor_edocs_logs')
 os.makedirs(LOG_BASE_DIR, exist_ok=True)
@@ -1497,6 +1497,28 @@ class TermuxPDFEditor:
             return
             
         chosen_dir = navigate_and_choose_directory()
+        # Verifica se há páginas E-DOCS na fila para exibir o menu de opções
+        has_edocs = any((p[0], p[1]) in self.pages_with_edocs for p in self.pages_ordered)
+        ajuste_modo = '1' # Padrão
+        
+        if has_edocs:
+            while True:
+                self.clear_screen()
+                CONSOLE.print(Panel("[bold cyan]ESTILO DE AJUSTE E-DOCS[/bold cyan]", border_style="cyan"))
+                table = Table(show_header=False, box=None)
+                table.add_column("Opção", style="bold yellow", justify="right")
+                table.add_column("Descrição")
+                table.add_row("[1]", "Padrão (Deslocar o carimbo lateral para a esquerda)")
+                table.add_row("[2]", "Redimensionar (Encolher o conteúdo criando margem na direita)")
+                CONSOLE.print(table)
+                
+                CONSOLE.print("\nEscolha como tratar o documento: ", end="")
+                ajuste_modo = input().strip()
+                if ajuste_modo in ['1', '2']:
+                    break
+                elif ajuste_modo == '\x1b' or ajuste_modo.lower() == 'q':
+                    return
+
         if not chosen_dir:
             return
             
@@ -1553,15 +1575,45 @@ class TermuxPDFEditor:
                                     single.insert_pdf(src, from_page=pno, to_page=pno)
                                     single.del_xml_metadata()
                                 
+                                    # 1. Aplica a ocultação/movimentação E-DOCS normal do seu script
                                     if shift_edocs_stamp_left_in_page(single[0], dx_pts=EDOCS_SHIFT_LEFT_PTS):
                                         edocs_count += 1
-                                
-                                    buf = io.BytesIO()
-                                    single.save(buf, garbage=4, deflate=True, clean=True, expand=255, pretty=False, no_new_id=True)
-                                    buf.seek(0)
+                                    
+                                    # ==========================================
+                                    # 2. NOVO BLOCO DE LÓGICA DE ESCALA
+                                    # ==========================================
+                                    if ajuste_modo == '2':
+                                        scaled_doc = fitz.open()
+                                        w = single[0].rect.width
+                                        h = single[0].rect.height
+                                        
+                                        # Matemática da margem exata de 36 pontos (~0.5 polegada)
+                                        escala = (w - 36.0) / w
+                                        nova_w = w * escala
+                                        nova_h = h * escala
+                                        dy = (h - nova_h) / 2.0
+                                        
+                                        nova_pag = scaled_doc.new_page(width=w, height=h)
+                                        target_rect = fitz.Rect(0, dy, nova_w, dy + nova_h)
+                                        
+                                        # Carimba o 'single' original (já com E-DOCS limpo) na página nova
+                                        nova_pag.show_pdf_page(target_rect, single, 0)
+                                        
+                                        buf = io.BytesIO()
+                                        scaled_doc.save(buf, garbage=4, deflate=True)
+                                        scaled_doc.close()
+                                        buf.seek(0)
+                                    else:
+                                        # ==========================================
+                                        # 3. FLUXO PADRÃO (Modo 1)
+                                        # ==========================================
+                                        buf = io.BytesIO()
+                                        single.save(buf, garbage=4, deflate=True, clean=True, expand=255, pretty=False, no_new_id=True)
+                                        buf.seek(0)
                                     
                                     alive_buffers.append(buf)
                                     writer.append(buf)
+
                             
                         else:
                             writer.append(file_path, pages=(pno, pno + 1))
