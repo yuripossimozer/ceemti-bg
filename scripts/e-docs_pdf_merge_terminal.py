@@ -14,7 +14,7 @@ import time
 # CONFIGURAÇÃO DE DIAGNÓSTICO (LOGS)
 # ==========================================
 SESSION_ID = uuid.uuid4().hex[:8].upper()
-VERSION = '1.2.2'
+VERSION = '1.2.3'
 DT_VERSION = '09/10/2026'
 
 LOG_BASE_DIR = os.path.join(tempfile.gettempdir(), 'pdf_editor_edocs_logs')
@@ -322,7 +322,7 @@ def _int_color_to_rgb01(color_int: int) -> tuple[float, float, float]:
     except Exception:
         return (0.0, 0.0, 0.0)
 
-def shift_edocs_stamp_left_in_page(page, dx_pts: float = EDOCS_SHIFT_LEFT_PTS) -> bool:
+def shift_edocs_stamp_left_in_page(page, dx_pts: float = EDOCS_SHIFT_LEFT_PTS, realign: bool = True) -> bool:
     try:
         page_rect = page.rect
         detect_x0 = page_rect.x1 - page_rect.width * 0.22
@@ -567,8 +567,12 @@ def shift_edocs_stamp_left_in_page(page, dx_pts: float = EDOCS_SHIFT_LEFT_PTS) -
                 new_rect = stamp_rect
             w = new_rect.width
             h = new_rect.height
-            target_x0 = column_x0 - (idx * step_x)
-            target_y0 = line_y0
+            if realign:
+                target_x0 = column_x0 - (idx * step_x)
+                target_y0 = line_y0
+            else:
+                target_x0 = new_rect.x0
+                target_y0 = new_rect.y0
             new_rect = fitz.Rect(target_x0, target_y0, target_x0 + w, target_y0 + h)
 
             if new_rect.x0 < page_rect.x0 + edge_pad:
@@ -590,17 +594,16 @@ def shift_edocs_stamp_left_in_page(page, dx_pts: float = EDOCS_SHIFT_LEFT_PTS) -
         fontsize = 7.5
         for _, new_rect, base_text, is_vertical in adjusted:
             if is_vertical:
-                # 1. Mede o comprimento real (em pontos) da string que será desenhada
                 try:
                     text_length = fitz.get_text_length(base_text, fontname="helv", fontsize=fontsize)
                 except AttributeError:
-                    # Fallback de segurança para versões mais antigas do PyMuPDF
                     text_length = fitz.getTextlength(base_text, fontname="helv", fontsize=fontsize)
                 
-                # 2. Calcula o ponto de partida ideal ancorado na base do texto.
-                # Como o eixo Y cresce de cima (0) para baixo (height), somamos a metade da página 
-                # com a metade do texto para achar a coordenada de baixo exata.
-                start_y = (page_rect.height + text_length) / 2
+                # NOVO COMPORTAMENTO: Preserva a altura original do carimbo
+                if realign:
+                    start_y = (page_rect.height + text_length) / 2
+                else:
+                    start_y = new_rect.y1  # y1 é a base do texto, de onde ele começa a subir
                 
                 shape.insert_text(
                     fitz.Point(new_rect.x0, start_y),
@@ -1575,22 +1578,26 @@ class TermuxPDFEditor:
                                     single.insert_pdf(src, from_page=pno, to_page=pno)
                                     single.del_xml_metadata()
                                 
-                                                                        # Define o deslocamento interno do carimbo baseado na escolha do usuário
-                                    deslocamento_interno = EDOCS_SHIFT_LEFT_PTS if ajuste_modo == '1' else 0
+                                    # Define as regras de deslocamento com base no modo escolhido
+                                    if ajuste_modo == '1':
+                                        dx = EDOCS_SHIFT_LEFT_PTS
+                                        realign_flag = True
+                                    else:
+                                        dx = 0
+                                        realign_flag = False
                                     
-                                    # 1. Aplica a ocultação E-DOCS (sem mover se for modo 2)
-                                    if shift_edocs_stamp_left_in_page(single[0], dx_pts=deslocamento_interno):
+                                    # Aplica a limpeza (com ou sem realinhamento local)
+                                    if shift_edocs_stamp_left_in_page(single[0], dx_pts=dx, realign=realign_flag):
                                         edocs_count += 1
                                     
                                     # ==========================================
-                                    # 2. NOVO BLOCO DE LÓGICA DE ESCALA
+                                    # MODO 2: LÓGICA DE ESCALA
                                     # ==========================================
                                     if ajuste_modo == '2':
                                         scaled_doc = fitz.open()
                                         w = single[0].rect.width
                                         h = single[0].rect.height
                                         
-                                        # Matemática da margem exata de 36 pontos (~0.5 polegada)
                                         escala = (w - 36.0) / w
                                         nova_w = w * escala
                                         nova_h = h * escala
@@ -1599,7 +1606,6 @@ class TermuxPDFEditor:
                                         nova_pag = scaled_doc.new_page(width=w, height=h)
                                         target_rect = fitz.Rect(0, dy, nova_w, dy + nova_h)
                                         
-                                        # Carimba o 'single' original (já com E-DOCS limpo) na página nova
                                         nova_pag.show_pdf_page(target_rect, single, 0)
                                         
                                         buf = io.BytesIO()
@@ -1608,7 +1614,7 @@ class TermuxPDFEditor:
                                         buf.seek(0)
                                     else:
                                         # ==========================================
-                                        # 3. FLUXO PADRÃO (Modo 1)
+                                        # MODO 1: FLUXO PADRÃO
                                         # ==========================================
                                         buf = io.BytesIO()
                                         single.save(buf, garbage=4, deflate=True, clean=True, expand=255, pretty=False, no_new_id=True)
@@ -1616,8 +1622,6 @@ class TermuxPDFEditor:
                                     
                                     alive_buffers.append(buf)
                                     writer.append(buf)
-
-                            
                         else:
                             writer.append(file_path, pages=(pno, pno + 1))
                         
